@@ -1,0 +1,314 @@
+#ifndef BLUB_GLOBALS_HPP
+#define BLUB_GLOBALS_HPP
+
+#cmakedefine BLUB_BUILD_GRAPHIC
+#cmakedefine BLUB_BUILD_GUI
+#cmakedefine BLUB_BUILD_INPUT
+#cmakedefine BLUB_BUILD_NETWORK
+#cmakedefine BLUB_BUILD_PHYSIC
+#cmakedefine BLUB_BUILD_PROCEDURAL
+#cmakedefine BLUB_BUILD_SERIALIZATION
+#cmakedefine BLUB_BUILD_SIGNALS
+#cmakedefine BLUB_BUILD_SYNC
+#cmakedefine BLUB_BUILD_WEB
+
+#cmakedefine BLUB_DEBUG
+#cmakedefine BLUB_RELEASE
+
+#cmakedefine BLUB_USE_OGRE3D
+#cmakedefine BLUB_USE_OIS
+#cmakedefine BLUB_USE_BULLET
+#cmakedefine BLUB_USE_CEF3
+
+#ifndef BLUB_USE_OGRE3D
+#    define BLUB_NO_OGRE3D
+#endif
+#ifndef BLUB_USE_BULLET
+#    define BLUB_NO_BULLET
+#endif
+#define BLUB_LINUX
+
+// #define BLUB_LOG_UDP
+// #define BLUB_LOG_TCP
+
+
+#ifdef BLUB_DEBUG
+#include <assert.h>
+#endif
+#include <sstream>
+#include <string>
+
+#include <boost/functional/hash_fwd.hpp>
+namespace boost {
+    namespace archive {
+        class binary_iarchive;
+        class binary_oarchive;
+        class text_iarchive;
+        class text_oarchive;
+        class xml_iarchive;
+        class xml_oarchive;
+    }
+    namespace asio {
+        namespace ip {
+            template <typename InternetProtocol>
+            class basic_endpoint;
+            class udp;
+        }
+    }
+    namespace serialization {
+        class access;
+    }
+}
+class portable_binary_iarchive;
+class portable_binary_oarchive;
+
+
+namespace blub
+{
+    typedef signed char int8;         /* 8 bit signed */
+    typedef unsigned char uint8;      /* 8 bit unsigned */
+    typedef short int16;              /* 16 bit signed */
+    typedef unsigned short uint16;    /* 16 bit unsigned */
+    typedef int int32;                /* 32 bit signed */
+    typedef unsigned int uint32;      /* 32 bit unsigned */
+    typedef long long int64;           /* 64 bit signed */
+    typedef unsigned long long uint64; /* 64 bit unsigned */
+    typedef float real;
+
+#ifdef BLUB_DEBUG
+#   define BASSERT(x) assert(x)
+#else
+#   define BASSERT(x)
+#endif
+
+    template <class T, std::size_t N>
+    class array;
+    class axisAlignedBox;
+    class axisAlignedBoxInt32;
+    template <class vector3Type>
+    class axisAlignedBoxTemplate;
+    class byteArray;
+    class colour;
+    template<typename elementType>
+    class deque;
+    template <class key>
+    class hashList;
+    template <class S,
+              class T,
+              class H = boost::hash<S>,
+              class P = std::equal_to<S>,
+              class A = std::allocator<std::pair<const S, T> > >
+    class hashMap;
+    template <class S, class T, class H, class P, class A>
+    class hashMapMulti;
+    template <typename idType>
+    class idCreator;
+    template <typename T>
+    class list;
+    class ray;
+    template <class S, class T>
+    class map;
+    class math;
+    template<class classType>
+    class ownsOwnSharedPointer;
+    template <typename first, typename second>
+    class pair;
+    class plane;
+    class quaternion;
+    class rectangle;
+    template <typename T>
+    class sharedPointer;
+    template <typename T>
+    class signal;
+    class sphere;
+    typedef std::istream iStream;
+    typedef std::ostream oStream;
+    class string;
+    class timer;
+    class transform;
+    class triangle;
+    class triangleVector3;
+    template <typename T>
+    class vector;
+    class vector2;
+    class vector2int32;
+    class vector3;
+    class vector3int32;
+    template <typename T>
+    class weakPointer;
+
+
+    namespace ai {
+        class aStar;
+        namespace astar {
+            class nodeListVoxelTerrain;
+            class node;
+            class edge;
+        }
+    }
+
+    namespace graphic {
+        class camera;
+        class entity;
+        class material;
+        class mesh;
+        class moveable;
+        class node;
+        class scene;
+        class shader;
+        class system;
+        class texture;
+        namespace sky {
+            class system;
+        }
+        namespace voxel {
+            namespace surface {
+                class tile;
+            }
+        }
+    }
+    namespace gui {
+        class renderWindow;
+    }
+    namespace input {
+        class joystick;
+        class keyboard;
+        class mouse;
+        class system;
+    }
+    namespace login
+    {
+        namespace message {
+            class error;
+        }
+        namespace validation {
+            class tcpClient;
+        }
+        class client;
+
+    }
+    namespace network {
+        class connection;
+
+        namespace block {
+            class reader;
+            class writer;
+        }
+        namespace ip {
+            namespace tcp {
+                class acceptor;
+                class connector;
+                class connection;
+            }
+            namespace udp {
+                typedef boost::asio::ip::basic_endpoint<boost::asio::ip::udp> endpoint;
+                class resolver;
+                class socket;
+            }
+        }
+        namespace package {
+            template <typename packageIdentifierType>
+            class container;
+
+            template <class packageType>
+            class reader;
+            class writer;
+        }
+        namespace serial {
+            class connection;
+        }
+    }
+    namespace octree {
+        template<typename S>
+        class container;
+        template<typename S>
+        class search;
+    }
+    namespace physic {
+        class collisionObject;
+        class rigidEntity;
+        class system;
+        namespace constraint {
+            class base;
+            class sixAxis;
+        }
+        namespace gravity {
+            class base;
+            class linear;
+            class spherical;
+        }
+        namespace shape
+        {
+            class capsule;
+            class mesh;
+            class multiShape;
+            class multiSphere;
+            class shape;
+            class sphere;
+        }
+        namespace collisionListener {
+            class rigidEntity;
+        }
+        namespace voxel
+        {
+            namespace surface
+            {
+                class multipleTiles;
+                class tile;
+            }
+        }
+    }
+    namespace serialization {
+        typedef boost::serialization::access access;
+
+        namespace format {
+            namespace binary {
+                //typedef boost::archive::binary_iarchive input;
+                //typedef boost::archive::binary_oarchive output;
+                typedef portable_binary_iarchive input;
+                typedef portable_binary_oarchive output;
+            }
+            namespace text {
+                typedef boost::archive::text_iarchive input;
+                typedef boost::archive::text_oarchive output;
+            }
+            namespace xml {
+                typedef boost::archive::xml_iarchive input;
+                typedef boost::archive::xml_oarchive output;
+            }
+        }
+    }
+    namespace sql {
+        class database;
+    }
+    namespace sync {
+        template <typename syncType, typename receiverType>
+        class sender;
+        class identifier;
+        namespace voxel {
+            namespace accessor {
+                namespace multipleTiles {
+                    class receiver;
+                    class sender;
+                }
+                namespace terrain {
+                    class receiver;
+                    class sender;
+                }
+            }
+            namespace container {
+                namespace multipleTiles {
+                    class receiver;
+                    class sender;
+                }
+            }
+        }
+    }
+    namespace web {
+        class system;
+        class offscreen;
+    }
+}
+
+#endif // BLUB_GLOBALS_HPP
+
