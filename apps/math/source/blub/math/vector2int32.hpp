@@ -38,6 +38,16 @@ public:
 
     vector2int32(const vector2& cast);
 
+protected:
+    BLUB_SERIALIZATION_ACCESS
+    template<typename Archive>
+    void serialize(Archive & readWrite, const unsigned int version)
+    {
+        (void)version;
+
+        readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(x);
+        readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(y);
+    }
 };
 
 std::size_t hash_value(const vector2int32& value);

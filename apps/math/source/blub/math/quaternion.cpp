@@ -116,6 +116,13 @@ real quaternion::normalise()
     return len;
 }
 
+quaternion quaternion::getNormalised() const
+{
+    quaternion result(*this);
+    result.normalise();
+    return result;
+}
+
 quaternion quaternion::Inverse() const
 {
     real fNorm = w*w+x*x+y*y+z*z;
@@ -307,6 +314,7 @@ quaternion quaternion::nlerp(real fT, const quaternion &rkP, const quaternion &r
     return result;
 }
 
-
-
-
+std::ostream &blub::operator<< (std::ostream &ostr, const quaternion &toCast)
+{
+    return ostr << "(" << toCast.x << "," << toCast.y << "," << toCast.z << "," << toCast.w << ")";
+}

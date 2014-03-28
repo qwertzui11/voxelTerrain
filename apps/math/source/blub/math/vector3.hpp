@@ -596,6 +596,13 @@ public:
 
     /** As normalise, except that this vector is unaffected and the
         normalised vector is returned as a copy. */
+    inline vector3 getNormalise() const
+    {
+        return normalisedCopy();
+    }
+
+    /** As normalise, except that this vector is unaffected and the
+        normalised vector is returned as a copy. */
     inline vector3 normalisedCopy(void) const
     {
         vector3 ret = *this;
@@ -668,6 +675,10 @@ private:
         readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(z);
     }
 };
+
+
+std::ostream& operator<< (std::ostream& ostr, const vector3& toCast);
+
 
 }
 BLUB_CLASSVERSION(blub::vector3, 1)

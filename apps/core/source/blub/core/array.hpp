@@ -1,5 +1,5 @@
-#ifndef ARRAY_HPP
-#define ARRAY_HPP
+#ifndef BLUB_ARRAY_HPP
+#define BLUB_ARRAY_HPP
 
 #include "blub/serialization/access.hpp"
 #include "blub/serialization/nameValuePair.hpp"
@@ -40,4 +40,4 @@ private:
 
 }
 
-#endif // ARRAY_HPP
+#endif // BLUB_ARRAY_HPP

@@ -1,7 +1,7 @@
 #ifndef BYTEARRAY_HPP
 #define BYTEARRAY_HPP
 
-#include "globals.hpp"
+#include "blub/core/globals.hpp"
 
 #include <vector>
 
@@ -25,6 +25,7 @@ public:
     byteArray(const char* str);
     byteArray(const byteArray &array);
     byteArray(const char *array, uint32 size);
+    byteArray(const string &str);
 
     byteArray mid(const uint32& index, const int32& length) const;
     uint32 size() const

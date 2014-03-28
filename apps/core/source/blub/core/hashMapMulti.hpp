@@ -18,6 +18,8 @@ class hashMapMulti : public boost::unordered::unordered_multimap<S, T>
 {
 public:
     typedef boost::unordered::unordered_multimap<S, T> t_base;
+    typedef std::pair<typename t_base::iterator, typename t_base::iterator> equal_range_result;
+    typedef std::pair<typename t_base::const_iterator, typename t_base::const_iterator> equal_range_result_const;
 
 
     hashMapMulti<S, T, H, P, A>() : t_base() {;}

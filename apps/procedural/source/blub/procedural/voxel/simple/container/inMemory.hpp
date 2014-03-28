@@ -21,28 +21,164 @@ namespace container
 {
 
 
-class inMemory : public base
+/**
+ * @brief The inMemory class stores all voxels in instances of tile::container and safes them in a very fast in-memory-container.
+ * Accessing a voxel-container costs O(1).
+ * The class does not save tiles that are full (container-tile returns true for isEmpty() ) or that are empty (container-tile returns true for isFull() ).
+ * Instead the class saves the state empty/full.
+ * Tiles that are full or empty dont produce a surface.
+ */
+template <class voxelType>
+class inMemory : public base<voxelType>
 {
 public:
-    typedef base t_base;
+    typedef base<voxelType> t_base;
 
-    typedef vector3int32map<utils::tile> t_tilesMap;
+    typedef vector3int32map<typename t_base::t_utilsTile> t_tilesMap;
 
-    inMemory(blub::async::dispatcher &worker, const real& voxelSize);
-    virtual ~inMemory();
+    /**
+     * @brief inMemory constructor
+     * @param worker May gets called by several threads.
+     */
+    inMemory(blub::async::dispatcher &worker)
+        : t_base(worker)
+    {
+#ifdef BLUB_LOG_VOXEL
+        blub::BOUT("inMemory::inMemory()");
+#endif
+    }
 
-    utils::tile getTileHolder(const blub::vector3int32& id) const override;
+    /**
+     * @brief ~inMemory descructor
+     */
+    virtual ~inMemory()
+    {
+    #ifdef BLUB_LOG_VOXEL
+        blub::BOUT("inMemory::~inMemory()");
+    #endif
+    }
 
-    const t_tilesMap& getTilesMap(void) const;
+    /**
+     * @brief getTileHolder returns a utils::tileHolder setted by setTile() or by editVoxel(). Read-lock class before call.
+     * Read-lock the class before.
+     * @param id Identifier. Contains voxel from id*blub::procedural::voxel::tile::container::voxelLength to (id+1)*blub::procedural::voxel::tile::container::voxelLength-1
+     * @return Always returns a valid value. If nothing found state in utils::tile gets set to empty.
+     */
+    typename t_base::t_utilsTile getTileHolder(const blub::vector3int32& id) const override
+    {
+        const axisAlignedBoxInt32 bounds(m_tiles.getBounds().getMinimum(), m_tiles.getBounds().getMaximum() - vector3int32(1));
+        if (bounds.isInside(id))
+        {
+            return m_tiles.getValue(id);
+        }
+        typename t_base::t_utilsTile result;
+        return result;
+    }
 
-    void setTileBounds(const axisAlignedBoxInt32& bounds);
-    const axisAlignedBoxInt32& getTileBounds() const;
+    /**
+     * @brief getTilesMap returns all tiles.
+     * @return
+     */
+    const t_tilesMap& getTilesMap() const
+    {
+        return m_tiles;
+    }
+
+    /**
+     * @brief setTileBounds sets the size for the map. Call for optimization, if you know the tile-dimensions before editing.
+     * @param bounds
+     */
+    void setTileBounds(const axisAlignedBoxInt32& bounds)
+    {
+        m_tiles.resize(bounds);
+    }
+
+    /**
+     * @brief getTileBounds returns the tile bounds.
+     * @return
+     */
+    const axisAlignedBoxInt32& getTileBounds() const
+    {
+        return m_tiles.getBounds();
+    }
 
 protected:
-    void setTileMaster(const blub::vector3int32& id, const utils::tile& toSet) override;
+    /**
+     * @brief setTileToContainerMaster replaces a tile. Call method by one thread at a time. Write-lock class before.
+     * @param id TileId
+     * @param oldOne Not used - may be interesting in derived classes.
+     * @param toSet
+     */
+    virtual void setTileToContainerMaster(const typename t_base::t_tileId id, const typename t_base::t_utilsTile &oldOne, const typename t_base::t_utilsTile &toSet)
+    {
+        (void)oldOne;
 
-    void setTileToFullMaster(const vector3int32& id) override;
-    void setTileToEmtpyMaster(const vector3int32& id) override;
+        m_tiles.extend(axisAlignedBoxInt32(id, id+vector3int32(1)));
+        m_tiles.setValue(id, toSet);
+    }
+
+    /**
+     * @brief setTileMaster sets a tile to an id. Call by one thread at a time.
+     * @param id TileId
+     * @param toSet
+     */
+    void setTileMaster(const blub::vector3int32& id, const typename t_base::t_utilsTile& toSet) override
+    {
+#ifdef BLUB_LOG_VOXEL
+        blub::BOUT("inMemory::setTileMaster id:" + blub::string::number(id));
+#endif
+
+        typename t_base::t_utilsTile holder(getTileHolder(id));
+        bool alreadyEmpty(holder.state == utils::tileState::empty);
+
+        if (toSet.state == utils::tileState::empty && alreadyEmpty)
+        {
+            return;
+        }
+        if (!alreadyEmpty)
+        {
+            if (toSet.state == utils::tileState::full &&
+                holder.state == utils::tileState::full) // nothing will change
+            {
+                return;
+            }
+        }
+        setTileToContainerMaster(id, holder, toSet);
+
+        if (toSet.state == utils::tileState::partitial)
+        {
+            BASSERT(!toSet.data->isEmpty());
+            BASSERT(!toSet.data->isFull());
+
+            if (!toSet.data->getEditedVoxelBoundingBox().isValid()) // no voxel changed
+            {
+                toSet.data->endEdit();
+                return;
+            }
+        }
+        t_base::addToChangeList(id, toSet);
+    }
+
+    void setTileToFullMaster(const vector3int32& id) override
+    {
+#ifdef BLUB_LOG_VOXEL
+        blub::BOUT("inMemory::setTileToFullMaster id:" + blub::string::number(id));
+#endif
+        BASSERT(!t_base::tryLockForEditMaster());
+
+        const typename t_base::t_utilsTile holder(utils::tileState::full);
+        setTileMaster(id, holder);
+    }
+    void setTileToEmtpyMaster(const vector3int32& id) override
+    {
+#ifdef BLUB_LOG_VOXEL
+        blub::BOUT("inMemory::setTileToEmtpyMaster id:" + blub::string::number(id));
+#endif
+        BASSERT(!t_base::tryLockForEditMaster());
+
+        const typename t_base::t_utilsTile holder(utils::tileState::empty);
+        setTileMaster(id, holder);
+    }
 
 protected:
     BLUB_SERIALIZATION_ACCESS
@@ -62,7 +198,7 @@ protected:
                 for (int32 indZ = bounds.getMinimum().z; indZ < bounds.getMaximum().z; ++indZ)
                 {
                     const vector3int32 id(indX, indY, indZ);
-                    const utils::tile holder(getTileHolder(id));
+                    const typename t_base::t_utilsTile holder(getTileHolder(id));
 
                     readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(id);
                     readWrite & serialization::nameValuePair::create("state", holder.state);
@@ -82,7 +218,7 @@ protected:
     {
         (void)version;
 
-        lockForEdit();
+        t_base::lockForEdit();
 
         axisAlignedBoxInt32 bounds;
         readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(bounds);
@@ -99,12 +235,12 @@ protected:
                     readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(id);
                     BASSERT(id == vector3int32(indX, indY, indZ));
 
-                    utils::tile holder;
+                    typename t_base::t_utilsTile holder;
                     readWrite & serialization::nameValuePair::create("state", holder.state);
 
                     if (holder.state == utils::tileState::partitial)
                     {
-                        holder.data = createTile(false);
+                        holder.data = t_base::createTile();
                         readWrite & serialization::nameValuePair::create("tile", *holder.data.data());
                     }
 
@@ -113,7 +249,7 @@ protected:
             }
         }
 
-        unlockForEdit();
+        t_base::unlockForEdit();
     }
     template <class formatType>
     void serialize(formatType & readWrite, const uint32& version)
@@ -121,8 +257,6 @@ protected:
         using namespace serialization;
 
         (void)version;
-
-        readWrite & nameValuePair::create("voxelSize", m_voxelSize);
 
         saveLoad(readWrite, *this, version);
     }

@@ -115,3 +115,9 @@ quaternion vector3::getRotationTo(const vector3 &dest, const vector3 &fallbackAx
     }
     return q;
 }
+
+
+std::ostream &blub::operator<< (std::ostream &ostr, const vector3 &toCast)
+{
+    return ostr << "(" << toCast.x << "," << toCast.y << "," << toCast.z << ")";
+}

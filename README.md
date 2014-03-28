@@ -1,3 +1,2 @@
-// TODO
-checkout apps/examples/
+Documentation available at http://voxelterrain.com
 

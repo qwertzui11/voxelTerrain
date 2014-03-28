@@ -16,18 +16,59 @@ namespace terrain
 {
 
 
-class accessor : public base<sharedPointer<tile::accessor> >
+/**
+ * @brief The accessor class contains a custom amount of level of details of type simple::accessor.
+ *
+ */
+template <class voxelType>
+class accessor : public base<sharedPointer<tile::accessor<voxelType> > >
 {
 public:
-    accessor(blub::async::dispatcher &worker,
-             simple::container::base &voxels,
-             const uint32& numLod);
-    ~accessor();
+    typedef base<sharedPointer<tile::accessor<voxelType> > > t_base;
 
-    simple::container::base &getVoxelContainer() const;
+    typedef simple::accessor<voxelType> t_simple;
+    typedef simple::container::base<voxelType> t_simpleContainer;
+
+    /**
+     * @brief accessor constructor
+     * @param worker May get called by multiple threads.
+     * @param voxels The voxel-container to get the data from and to sync with.
+     * @param numLod Count of level of details.
+     */
+    accessor(blub::async::dispatcher &worker,
+             t_simpleContainer &voxels,
+             const uint32& numLod)
+        : m_voxels(voxels)
+    {
+        for (uint32 indLod = 0; indLod < numLod; ++indLod)
+        {
+            t_simple* lod = new t_simple(worker, voxels, indLod);
+            t_base::m_lods.push_back(lod);
+        }
+    }
+
+    /**
+     * @brief ~accessor destructor
+     */
+    virtual ~accessor()
+    {
+        for (auto lod : t_base::m_lods)
+        {
+            delete lod;
+        }
+    }
+
+    /**
+     * @brief getVoxelContainer returns the voxel-container to get the data from and to sync with.
+     * @return
+     */
+    t_simpleContainer &getVoxelContainer() const
+    {
+        return m_voxels;
+    }
 
 private:
-    simple::container::base &m_voxels;
+    t_simpleContainer &m_voxels;
 
 };
 

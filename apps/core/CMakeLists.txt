@@ -1,7 +1,9 @@
 message("doing core")
 
 set(sources
+base64.cpp
 byteArray.cpp
+compression.cpp
 dateTime.cpp
 deque.cpp
 idCreator.cpp
@@ -14,6 +16,8 @@ PARENT_SCOPE
 set(headers
 predecl.hpp
 any.hpp
+base64.hpp
+compression.hpp
 pair.hpp
 hashMapMulti.hpp
 string.hpp
@@ -25,7 +29,6 @@ array.hpp
 sharedPointer.hpp
 hashList.hpp
 geometry.hpp
-ownsOwnSharedPointer.hpp
 hashMap.hpp
 idCreator.hpp
 map.hpp
@@ -34,6 +37,7 @@ byteArray.hpp
 classVersion.hpp
 log.hpp
 noncopyable.hpp
+scopedPtr.hpp
 signal.hpp
 vector.hpp
 stringList.hpp

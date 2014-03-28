@@ -24,11 +24,6 @@ public:
      */
     real end();
 
-    /**
-     * @brief same as end(), but prints time to log
-     */
-    real endAndLog();
-
 private:
     boost::chrono::system_clock::time_point m_timePoint;
 

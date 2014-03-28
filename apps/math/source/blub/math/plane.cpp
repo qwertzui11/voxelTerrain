@@ -47,5 +47,10 @@ plane::plane(vector3 rkPoint, vector3 rkNormal)
     d = -rkNormal.dotProduct(rkPoint);
 }
 
+real plane::getDistance(const vector3 &rkPoint) const
+{
+    return normal.dotProduct(rkPoint) + d;
+}
+
 
 

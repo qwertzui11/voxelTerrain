@@ -7,6 +7,7 @@
 #include "blub/core/string.hpp"
 
 #include <boost/asio/io_service.hpp>
+#include <boost/bind.hpp>
 
 
 namespace boost
@@ -29,6 +30,7 @@ public:
 
     void join();
     void start();
+    void run();
     void reset();
     void stop();
 

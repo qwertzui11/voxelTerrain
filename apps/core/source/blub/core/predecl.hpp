@@ -1,0 +1,5 @@
+
+namespace blub
+{
+    class string;
+}

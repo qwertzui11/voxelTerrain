@@ -1,25 +1,29 @@
 #ifndef NETWORK_SYNC_IDENTIFIER_HPP
 #define NETWORK_SYNC_IDENTIFIER_HPP
 
-#include "blub/core/any.hpp"
-#include "blub/core/globals.hpp"
+#include "blub/core/enableSharedFromThis.hpp"
+#include "blub/core/sharedPointer.hpp"
 
 
 namespace blub {
 namespace sync {
 
 
-class identifier
+class identifier : public enableSharedFromThis<identifier>
 {
 public:
-    identifier()
-    {;}
-    identifier(const any &userInformation_)
-        : userInformation(userInformation_)
-    {;}
+    typedef sharedPointer<identifier> pointer;
+
+    static pointer create()
+    {
+        return pointer(new identifier());
+    }
     virtual ~identifier() {;}
 
-    any userInformation;
+protected:
+    identifier()
+    {;}
+
 };
 
 

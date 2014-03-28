@@ -9,11 +9,14 @@ namespace blub
     class pair : public std::pair<A, B>
     {
     public:
-        pair(void)
+        pair()
             : std::pair<A, B>()
         {;}
         pair(const A &a, const B &b)
             : std::pair<A, B>(a, b)
+        {;}
+        pair(const std::pair<A, B> &copy)
+            : std::pair<A, B>(copy)
         {;}
     };
 }

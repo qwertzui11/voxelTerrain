@@ -49,9 +49,14 @@ void dispatcher::start()
     }
     if (m_numThreads == 0)
     {
-        m_service.run();
+        run();
         m_service.reset();
     }
+}
+
+void dispatcher::run()
+{
+    m_service.run();
 }
 
 void dispatcher::reset()
@@ -93,7 +98,7 @@ boost::asio::io_service *dispatcher::_getIoService()
 void dispatcher::runThread(const int32& indThread)
 {
     nameThread(indThread);
-    m_service.run();
+    run();
 }
 
 void dispatcher::nameThread(const int32& indThread)

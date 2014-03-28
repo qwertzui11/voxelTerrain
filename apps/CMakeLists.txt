@@ -6,11 +6,11 @@ set (blub_VERSION_MAJOR 1)
 set (blub_VERSION_MINOR 0)
 
 # Initialize CXXFLAGS.
-set(CMAKE_CXX_FLAGS                "-Wall -std=c++11 -Wno-unused-variable")
-set(CMAKE_CXX_FLAGS_DEBUG          "-O0 -g")
-set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE        "-O4 -DNDEBUG")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
+set(CMAKE_CXX_FLAGS                "-Wall -std=c++11 -Wno-unused-variable ${CMAKE_CXX_FLAGS}")
+#set(CMAKE_CXX_FLAGS_DEBUG          "-O0 -g")
+#set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
+#set(CMAKE_CXX_FLAGS_RELEASE        "-O3 -DNDEBUG")
+#set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
 
 set(CMAKE_DEBUG_POSTFIX 	   "_d")
 
@@ -36,6 +36,7 @@ endif ()
 option (BUILD_SHARED_LIBS "build as shared libraries" ON)
 
 option (BLUB_BUILD_ASYNC "build async" ON)
+#option (BLUB_BUILD_DATABASE "build database" ON)
 #option (BLUB_BUILD_GRAPHIC "build graphic" ON)
 #option (BLUB_BUILD_GUI "build gui" ON)
 #option (BLUB_BUILD_INPUT "build input" ON)
@@ -47,27 +48,30 @@ option (BLUB_BUILD_SERIALIZATION "build serialization" ON)
 #option (BLUB_BUILD_SIGNALS "build signals" ON)
 option (BLUB_BUILD_SYNC "build sync" ON)
 #option (BLUB_BUILD_WEB "build web" ON)
-option (BLUB_USE_OGRE3D "use ogre3d" ON)
-option (BLUB_USE_OIS "use ois" ON)
+
+option (BLUB_BUILD_EXAMPLES "build examples" ON)
+#option (BLUB_BUILD_TESTS "build tests" ON)
+
+option (BLUB_USE_ASSIMP "use assimp" ON)
 #option (BLUB_USE_BULLET "use bullet" ON)
 #option (BLUB_USE_CEF3 "use cef3" ON)
+option (BLUB_USE_OGRE3D "use ogre3d" ON)
+option (BLUB_USE_OIS "use ois" ON)
+#option (BLUB_USE_SOCI "use soci" ON)
+#option (BLUB_USE_GTEST "use gtest" ON)
+
+unset (LIBS)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-set(BLUB_LIBRARIES_TO_BUILD 
- core
-)
-
-set(EXAMPLE_EXECUTEABLES_TO_BUILD ${EXAMPLE_EXECUTEABLES_TO_BUILD}
-  voxelTerrain
-)
 
 # find boost
+ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK )
 set( BOOST_ROOT "/usr/local" CACHE PATH "boost root")
 IF(NOT EXISTS ${BOOST_ROOT})
   message(FATAL_ERROR "Could not find boost root: ${BOOST_ROOT}")
 endif ()
-find_package(Boost REQUIRED COMPONENTS system thread chrono date_time iostreams serialization )
+find_package(Boost 1.55.0 REQUIRED COMPONENTS log log_setup system thread chrono date_time iostreams serialization )
 set (INCLUDES ${INCLUDES}
   ${Boost_INCLUDE_DIRS}
 )
@@ -75,28 +79,7 @@ set (LIBS ${LIBS}
   ${Boost_LIBRARIES}
 )
 
-# find bzip2
-find_package(BZip2 REQUIRED)
-set (LIBS ${LIBS}
-  ${BZIP2_LIBRARIES}
-)
-
-# physics (bullet)
-if(BLUB_USE_BULLET)
-  set( BULLET_ROOT "/usr/local" CACHE PATH "bullet root")
-  IF(NOT EXISTS ${BULLET_ROOT})
-    message(FATAL_ERROR "Could not find bullet root: ${BULLET_ROOT}")
-  endif ()
-  find_package(Bullet REQUIRED)
-  set ( BULLET_INCLUDE_DIRS ${BULLET_INCLUDE_DIRS} ${BULLET_INCLUDE_DIRS}/.. )
-  set (INCLUDES ${INCLUDES}
-       ${BULLET_INCLUDE_DIRS}
-  )
-  set (LIBS ${LIBS}
-    ${BULLET_LIBRARIES}
-  )
-endif(BLUB_USE_BULLET)
-
+# ogre3d
 if(BLUB_USE_OGRE3D)
   find_package(OGRE REQUIRED)
   set (INCLUDES ${INCLUDES}
@@ -107,6 +90,7 @@ if(BLUB_USE_OGRE3D)
   )
 endif(BLUB_USE_OGRE3D)
 
+# ois
 if(BLUB_USE_OIS)
   find_package(OIS REQUIRED)
   set (INCLUDES ${INCLUDES}
@@ -117,16 +101,20 @@ if(BLUB_USE_OIS)
   )
 endif(BLUB_USE_OIS)
 
-if(BLUB_USE_CEF3)
-  set( CEF3_ROOT "/usr/local" CACHE PATH "cef3 root" )
-  find_package(Cef3 REQUIRED)
+# assimp
+if(BLUB_USE_ASSIMP)
+  find_package(Assimp REQUIRED)
   set (INCLUDES ${INCLUDES}
-    ${CEF3_INCLUDE_DIRS}
+    ${ASSIMP_INCLUDE_DIRS}
   )
   set (LIBS ${LIBS}
-    ${CEF3_LIBRARIES}
+    ${ASSIMP_LIBRARIES}
   )
-endif(BLUB_USE_CEF3)
+endif(BLUB_USE_ASSIMP)
+
+if (BLUB_BUILD_DATABASE)
+  set( BLUB_LIBRARIES_TO_BUILD ${BLUB_LIBRARIES_TO_BUILD} database)
+endif (BLUB_BUILD_DATABASE)
 if (BLUB_BUILD_PHYSIC)
   set( BLUB_LIBRARIES_TO_BUILD ${BLUB_LIBRARIES_TO_BUILD} physic)
 endif (BLUB_BUILD_PHYSIC)
@@ -160,6 +148,19 @@ endif (BLUB_BUILD_SIGNALS)
 if (BLUB_BUILD_SYNC)
   set( BLUB_LIBRARIES_TO_BUILD ${BLUB_LIBRARIES_TO_BUILD} sync)
 endif (BLUB_BUILD_SYNC)
+if (BLUB_BUILD_WEB)
+  set( BLUB_LIBRARIES_TO_BUILD ${BLUB_LIBRARIES_TO_BUILD} web)
+endif (BLUB_BUILD_WEB)
+
+set( BLUB_LIBRARIES_TO_BUILD ${BLUB_LIBRARIES_TO_BUILD}
+ core
+ log
+)
+
+set(EXAMPLE_EXECUTEABLES_TO_BUILD ${EXAMPLE_EXECUTEABLES_TO_BUILD}
+  voxelterrain
+)
+
 
 # additianal standard includes
 set (INCLUDES ${INCLUDES}
@@ -217,7 +218,8 @@ foreach(LIB_TO_BUILD ${BLUB_LIBRARIES_TO_BUILD})
 	  FILES_MATCHING PATTERN "*.hpp")
 endforeach(LIB_TO_BUILD)
 
-# do executeables
+# do examples
+if (BLUB_BUILD_EXAMPLES)
 foreach(EXEC_TO_BUILD ${EXAMPLE_EXECUTEABLES_TO_BUILD})
   unset(sources)
   unset(headers)
@@ -237,10 +239,41 @@ foreach(EXEC_TO_BUILD ${EXAMPLE_EXECUTEABLES_TO_BUILD})
     headers
     headers_with_prefix
   )
-  add_executable(${EXEC_TO_BUILD}-exec ${sources_with_prefix} ${headers_with_prefix})
-  target_link_libraries(${EXEC_TO_BUILD}-exec ${BLUB_LIBRARIES_TO_BUILD} ${LIBS})
+  # one example consists of one cpp. All other helper classes are header only.
+  # Makes it easier to read the example, than rather jumping between several implementation files.
+  # so every cpp has to have a main will become an executeable.
+  foreach(MAIN_TO_BUILD ${sources_with_prefix})
+    GET_FILENAME_COMPONENT(MAIN_TO_BUILD_NAME ${MAIN_TO_BUILD} NAME_WE)
+    set(MAIN_TO_BUILD_RESULT_NAME "example-${EXEC_TO_BUILD}-${MAIN_TO_BUILD_NAME}-exec")
+    add_executable(${MAIN_TO_BUILD_RESULT_NAME} ${MAIN_TO_BUILD} ${headers_with_prefix})
+    target_link_libraries(${MAIN_TO_BUILD_RESULT_NAME} ${BLUB_LIBRARIES_TO_BUILD} ${LIBS})
+  endforeach(MAIN_TO_BUILD)
 endforeach(EXEC_TO_BUILD)
+endif(BLUB_BUILD_EXAMPLES)
 
+# do tests
+if (BLUB_BUILD_TESTS)
+  unset(sources)
+  unset(headers)
+  unset(sources_with_prefix)
+  unset(headers_with_prefix)
+  add_subdirectory(tests)
+  set (INCLUDES ${INCLUDES}
+    ${PROJECT_SOURCE_DIR}/tests/source
+  )
+  prefix_list(
+    "tests/source/"
+    sources
+    sources_with_prefix
+  )
+  prefix_list(
+    "tests/source/"
+    headers
+    headers_with_prefix
+  )
+  add_executable(tests-exec ${sources_with_prefix} ${headers_with_prefix})
+  target_link_libraries(tests-exec ${BLUB_LIBRARIES_TO_BUILD} ${LIBS} ${GTEST_BOTH_LIBRARIES})
+endif(BLUB_BUILD_TESTS)
 
 include_directories(${INCLUDES})
 
@@ -249,4 +282,6 @@ install(FILES "${PROJECT_BINARY_DIR}/blub/core/globals.hpp"
 install(TARGETS ${BLUB_LIBRARIES_TO_BUILD}
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib/static)
+
+# message("libs:${LIBS}")
 

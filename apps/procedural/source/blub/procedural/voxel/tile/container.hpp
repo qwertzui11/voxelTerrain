@@ -2,10 +2,9 @@
 #define PROCEDURAL_VOXEL_TILE_CONTAINER_HPP
 
 #include "blub/core/array.hpp"
-#include "blub/math/axisAlignedBoxInt32.hpp"
 #include "blub/core/classVersion.hpp"
+#include "blub/math/axisAlignedBoxInt32.hpp"
 #include "blub/math/vector3int32.hpp"
-#include "blub/procedural/voxel/data.hpp"
 #include "blub/procedural/voxel/tile/base.hpp"
 #include "blub/serialization/access.hpp"
 #include "blub/serialization/nameValuePair.hpp"
@@ -21,57 +20,105 @@ namespace tile
 {
 
 
-class container : public base<container>
+/**
+ * @brief The container class contains an array of voxel. The amount of voxel per tile is voxelLength^3.
+ * The class counts how many voxel are max and how many are min. if all voxel are min or max the class simple::container::base doesnt save them.
+ * Additionally it saves an axisAlignedBox which describes the bounds of the voxel that changed.
+ */
+template <class voxelType>
+class container : public base<container<voxelType> >
 {
 public:
-    typedef base<container> t_base;
+    typedef base<container<voxelType> > t_base;
+    typedef voxelType t_data;
 
-    static constexpr int32 voxelLength = 20;
+    static constexpr int32 voxelLength = 24;
     static constexpr int32 voxelCount = voxelLength*voxelLength*voxelLength;
-    static constexpr int8 voxelInterpolationMaximum = 127;
-    static constexpr int8 voxelInterpolationMinimum = -127;
 
-    typedef array<data, voxelCount> t_voxelArray;
+    typedef array<t_data, voxelCount> t_voxelArray;
 
-    static pointer create();
-    virtual ~container();
+    /**
+     * @brief create creates an instance.
+     * @return never nullptr.
+     */
+    static typename t_base::pointer create()
+    {
+        return new container();
+    }
+    /**
+     * @brief ~container destructor.
+     */
+    virtual ~container()
+    {
+    }
 
-    void startEdit(void)
+    /**
+     * @brief startEdit resets the changed-voxel-bound-aab
+     */
+    void startEdit()
     {
         BASSERT(!m_editing);
         m_changedVoxelBoundingBox.setInvalid();
         m_editing = true;
     }
-    void endEdit(void)
+    /**
+     * @brief endEdit end edit
+     */
+    void endEdit()
     {
         BASSERT(m_editing);
         m_editing = false;
     }
+    /**
+     * @brief getEditing returns if editing is active.
+     * @return
+     */
     const bool& getEditing() const
     {
         return m_editing;
     }
 
-    const axisAlignedBoxInt32& getEditedVoxelBoundingBox(void) const
+    /**
+     * @brief getEditedVoxelBoundingBox returns an axisAlignedBox which describes the bounds of the voxel that changed since the last call of startEdit().
+     * @return
+     */
+    const axisAlignedBoxInt32& getEditedVoxelBoundingBox() const
     {
         return m_changedVoxelBoundingBox;
     }
 
-    void setVoxel(const vector3int32& pos, const data& toSet)
+    /**
+     * @brief setVoxel sets an voxel to a local position.
+     * Extends changed axisAlignedBox-bounds and counts if voxel is minimum or maximum.
+     * @param pos
+     * @param toSet
+     * @see procedural::voxel::data
+     */
+    void setVoxel(const vector3int32& pos, const voxelType& toSet)
     {
         if(setVoxel(calculateIndex(pos), toSet))
         {
             m_changedVoxelBoundingBox.extend(pos);
         }
     }
-    void setVoxelIfInterpolationHigher(const vector3int32& pos, const data& toSet)
+    // TODO remove me - do lambda / boost/std::function
+    void setVoxelIfInterpolationHigher(const vector3int32& pos, const voxelType& toSet)
     {
         if(setVoxelIfInterpolationHigher(calculateIndex(pos), toSet))
         {
             m_changedVoxelBoundingBox.extend(pos);
         }
     }
-    void setVoxelIfInterpolationLower(const vector3int32& pos, const data& toSet)
+    // TODO remove me - do lambda / boost/std::function
+    void setVoxelIfInterpolationHigherEqualZero(const vector3int32& pos, const voxelType& toSet)
+    {
+        if(setVoxelIfInterpolationHigherEqualZero(calculateIndex(pos), toSet))
+        {
+            m_changedVoxelBoundingBox.extend(pos);
+        }
+    }
+    // TODO remove me - do lambda / boost/std::function
+    void setVoxelIfInterpolationLower(const vector3int32& pos, const voxelType& toSet)
     {
         if(setVoxelIfInterpolationLower(calculateIndex(pos), toSet))
         {
@@ -79,24 +126,74 @@ public:
         }
     }
 
-    void setFull(void);
-    void setEmpty(void);
+    /**
+     * @brief setFull sets all voxel to max.
+     * @see procedural::voxel::data::setMax()
+     */
+    void setFull()
+    {
+        BASSERT(m_editing);
 
-    data getVoxel(const vector3int32& pos) const
+        for (uint32 indVoxel = 0; indVoxel < m_voxels.size(); ++indVoxel)
+        {
+            m_voxels[indVoxel].setMax();
+        }
+        m_countVoxelInterpolationLargerZero = voxelCount;
+        m_countVoxelMinimum = 0;
+        m_countVoxelMaximum = voxelCount;
+    }
+    /**
+     * @brief setFull sets all voxel to max.
+     * @see procedural::voxel::data::setMin()
+     */
+    void setEmpty()
+    {
+        BASSERT(m_editing);
+
+        for (uint32 indVoxel = 0; indVoxel < m_voxels.size(); ++indVoxel)
+        {
+            m_voxels[indVoxel].setMin();
+        }
+        m_countVoxelInterpolationLargerZero = 0;
+        m_countVoxelMinimum = voxelCount;
+        m_countVoxelMaximum = 0;
+    }
+
+    /**
+     * @brief getVoxel returns a copy of a local voxel.
+     * @param pos local voxel-position.
+     * @return
+     */
+    voxelType getVoxel(const vector3int32& pos) const
     {
         return getVoxel(calculateIndex(pos));
     }
-    const data& getVoxel(const int32& index) const
+    /**
+     * @brief getVoxel returns a copy of a local voxel.
+     * @param index local voxel-position.
+     * @return
+     * @see calculateIndex()
+     */
+    const voxelType& getVoxel(const int32& index) const
     {
         BASSERT(index >= 0);
         BASSERT(index < voxelCount);
         return m_voxels[index];
     }
+    /**
+     * @brief getVoxelArray returns reference voxel-array
+     * @return
+     */
     const t_voxelArray& getVoxelArray(void) const
     {
         return m_voxels;
     }
 
+    /**
+     * @brief calculateIndex convertes a 3d voxel-pos to a 1d array-index. 0 <= pos.xyz < voxelLength
+     * @param pos to convert.
+     * @return
+     */
     static int32 calculateIndex(const vector3int32& pos)
     {
         BASSERT(pos.x >= 0);
@@ -108,40 +205,78 @@ public:
         return (pos.x)*(voxelLength*voxelLength) + (pos.y)*(voxelLength) + (pos.z);
     }
 
-    const int32& getCountVoxelLargerZero(void) const
+    /**
+     * @brief getCountVoxelLargerZero returns number of voxel not minimum.
+     * @return
+     * @see procedural::voxel::data
+     */
+    const int32& getCountVoxelLargerZero() const
     {
-        BASSERT(m_countVoxelLargerZero >= 0);
-        BASSERT(m_countVoxelLargerZero <= voxelCount);
-        return m_countVoxelLargerZero;
+        BASSERT(m_countVoxelInterpolationLargerZero >= 0);
+        BASSERT(m_countVoxelInterpolationLargerZero <= voxelCount);
+        return m_countVoxelInterpolationLargerZero;
     }
-    const int32& getCountVoxelMaximum(void) const
+    /**
+     * @brief getCountVoxelMaximum returns number of voxel that are maximum.
+     * @return
+     * @see procedural::voxel::data
+     */
+    const int32& getCountVoxelMaximum() const
     {
         BASSERT(m_countVoxelMaximum >= 0);
         BASSERT(m_countVoxelMaximum <= voxelCount);
         return m_countVoxelMaximum;
     }
-    const int32& getCountVoxelMinimum(void) const
+    /**
+     * @brief getCountVoxelMinimum returns number of voxel that are minimum.
+     * @return
+     * @see procedural::voxel::data
+     */
+    const int32& getCountVoxelMinimum() const
     {
         BASSERT(m_countVoxelMinimum >= 0);
         BASSERT(m_countVoxelMinimum <= voxelCount);
         return m_countVoxelMinimum;
     }
 
-    bool isEmpty(void) const
+    /**
+     * @brief isEmpty returns true if all voxel are minimum.
+     * @return
+     * @see procedural::voxel::data
+     */
+    bool isEmpty() const
     {
         return m_countVoxelMinimum == container::voxelCount;
     }
 
-    bool isFull(void) const
+    /**
+     * @brief isFull returns true if all voxel are maximum.
+     * @return
+     * @see procedural::voxel::data
+     */
+    bool isFull() const
     {
         return m_countVoxelMaximum == container::voxelCount;
     }
 
-    void operator = (const container& other);
+    /**
+     * @brief operator = copy operator
+     * @param other
+     */
+    void operator = (const container& other)
+    {
+        m_countVoxelInterpolationLargerZero = other.getCountVoxelLargerZero();
+        m_countVoxelMinimum = other.getCountVoxelMinimum();
+        m_countVoxelMaximum = other.getCountVoxelMaximum();
+        m_voxels = other.getVoxelArray();
+    }
 
 protected:
+    /**
+     * @brief container constructor
+     */
     container()
-        : m_countVoxelLargerZero(0)
+        : m_countVoxelInterpolationLargerZero(0)
         , m_countVoxelMinimum(voxelCount)
         , m_countVoxelMaximum(0)
         , m_editing(false)
@@ -149,76 +284,102 @@ protected:
         ;
     }
 
-    bool setVoxelIfInterpolationHigher(const int32& index, const data& toSet)
+    // TODO remove me - do lambda / boost/std::function
+    bool setVoxelIfInterpolationHigher(const int32& index, const voxelType& toSet)
     {
         BASSERT(m_editing);
         BASSERT(index >= 0);
         BASSERT(index < voxelCount);
 
-        const int8& currentInterpolation(getVoxel(index).interpolation);
-        if (currentInterpolation >= toSet.interpolation)
-        {
-            return false;
-        }
-        return setVoxel(index, toSet);
-    }
-    bool setVoxelIfInterpolationLower(const int32& index, const data& toSet)
-    {
-        BASSERT(m_editing);
-        BASSERT(index >= 0);
-        BASSERT(index < voxelCount);
-
-        const int8& currentInterpolation(getVoxel(index).interpolation);
-        if (currentInterpolation <= toSet.interpolation)
+        const int8& currentInterpolation(getVoxel(index).getInterpolation());
+        if (currentInterpolation >= toSet.getInterpolation())
         {
             return false;
         }
         return setVoxel(index, toSet);
     }
 
-    bool setVoxel(const int32& index, const data& toSet)
+    // TODO remove me - do lambda / boost/std::function
+    bool setVoxelIfInterpolationHigherEqualZero(const int32& index, const voxelType& toSet)
     {
         BASSERT(m_editing);
         BASSERT(index >= 0);
         BASSERT(index < voxelCount);
 
-        const int8& currentInterpolation(getVoxel(index).interpolation);
+        const int8& currentInterpolation(getVoxel(index).getInterpolation());
+        if (currentInterpolation >= 0)
+        {
+            return false;
+        }
+        return setVoxel(index, toSet);
+    }
 
-        if (currentInterpolation == toSet.interpolation)
+    // TODO remove me - do lambda / boost/std::function
+    bool setVoxelIfInterpolationLower(const int32& index, const voxelType& toSet)
+    {
+        BASSERT(m_editing);
+        BASSERT(index >= 0);
+        BASSERT(index < voxelCount);
+
+        const int8& currentInterpolation(getVoxel(index).getInterpolation());
+        if (currentInterpolation <= toSet.getInterpolation())
+        {
+            return false;
+        }
+        return setVoxel(index, toSet);
+    }
+
+    /**
+     * @brief setVoxel sets voxel to array and counts if voxel is maximum or minimum
+     * @param index
+     * @param toSet
+     * @return
+     * @see calculateIndex()
+     * @see procedural::voxel::data
+     */
+    bool setVoxel(const int32& index, const voxelType& toSet)
+    {
+        BASSERT(m_editing);
+        BASSERT(index >= 0);
+        BASSERT(index < voxelCount);
+
+        const voxelType& currentVoxel(getVoxel(index));
+
+        if (currentVoxel == toSet)
         {
             return false;
         }
 
         // count for full/empty voxel --> memory optimisation
-        if (currentInterpolation <= 0 && toSet.interpolation > 0)
+        if (currentVoxel.getInterpolation() < 0 && toSet.getInterpolation() >= 0)
         {
-            ++m_countVoxelLargerZero;
+            ++m_countVoxelInterpolationLargerZero;
         }
         else
         {
-            if (currentInterpolation > 0 && toSet.interpolation <= 0)
+            if (currentVoxel.getInterpolation() >= 0 && toSet.getInterpolation() < 0)
             {
-                --m_countVoxelLargerZero;
+                --m_countVoxelInterpolationLargerZero;
             }
         }
-        if (currentInterpolation != voxelInterpolationMinimum && toSet.interpolation == voxelInterpolationMinimum)
+        if (!currentVoxel.isMin() && toSet.isMin())
         {
             ++m_countVoxelMinimum;
         }
         else
         {
-            if (currentInterpolation == voxelInterpolationMinimum && toSet.interpolation != voxelInterpolationMinimum)
+            if (currentVoxel.isMin() && !toSet.isMin())
             {
                 --m_countVoxelMinimum;
             }
         }
-        if (currentInterpolation != voxelInterpolationMaximum && toSet.interpolation == voxelInterpolationMaximum)
+        if (!currentVoxel.isMax() && toSet.isMax())
         {
             ++m_countVoxelMaximum;
         }
         else
         {
-            if (currentInterpolation == voxelInterpolationMaximum && toSet.interpolation != voxelInterpolationMaximum)
+            if (currentVoxel.isMax() && !toSet.isMax())
             {
                 --m_countVoxelMaximum;
             }
@@ -242,7 +403,7 @@ private:
 
         readWrite & nameValuePair::create("countVoxelMinimum", m_countVoxelMinimum);
         readWrite & nameValuePair::create("countVoxelMaximum", m_countVoxelMaximum);
-        readWrite & nameValuePair::create("countVoxelLargerZero", m_countVoxelLargerZero);
+        readWrite & nameValuePair::create("countVoxelLargerZero", m_countVoxelInterpolationLargerZero);
         readWrite & nameValuePair::create("editing", m_editing);
         readWrite & nameValuePair::create("changedVoxelBoundingBox", m_changedVoxelBoundingBox);
         readWrite & nameValuePair::create("voxels", m_voxels);
@@ -251,7 +412,7 @@ private:
 private:
     t_voxelArray m_voxels;
 
-    int32 m_countVoxelLargerZero;
+    int32 m_countVoxelInterpolationLargerZero;
     int32 m_countVoxelMinimum;
     int32 m_countVoxelMaximum;
 
@@ -260,12 +421,15 @@ private:
 
 };
 
+template <class voxelType>
+constexpr int32 container<voxelType>::voxelLength;
+
 
 }
 }
 }
 }
-BLUB_CLASSVERSION(blub::procedural::voxel::tile::container, 1)
+
 
 
 

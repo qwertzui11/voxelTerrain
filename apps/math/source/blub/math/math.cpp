@@ -1,58 +1,22 @@
 #include "math.hpp"
 
-#include <cmath>
-
 
 using namespace blub;
 
-const real math::pi = 3.14159265358979323846;
+constexpr real math::pi;
+constexpr real math::piHalf;
 
-
-real math::min(const real &num0, const real &num1)
-{
-    return std::min<real>(num0, num1);
-}
-
-int32 math::min(const int32 &num0, const int32 &num1)
-{
-    return std::min<int32>(num0, num1);
-}
-
-real math::max(const real &num0, const real &num1)
-{
-    return std::max<real>(num0, num1);
-}
-
-int32 math::max(const int32 &num0, const int32 &num1)
-{
-    return std::max<int32>(num0, num1);
-}
 
 real math::abs(const real &calc)
 {
     return std::abs(calc);
 }
 
-real math::saturate(const real &num, const real &min_, const real &max_)
+real math::map(const real &value, const real &fromMin, const real &fromMax, const real &toMin, const real &toMax)
 {
-    return min(max_, max(min_, num));
-}
-
-real math::clamp(const real &val, const real &minval, const real &maxval)
-{
-    BASSERT(minval <= maxval);
-    return max(min(val, maxval), minval);
-}
-
-int32 math::clamp(const int32 &val, const int32 &minval, const int32 &maxval)
-{
-    BASSERT(minval <= maxval);
-    return max(min(val, maxval), minval);
-}
-
-real math::floor(const real &calc)
-{
-    return std::floor(calc);
+    BASSERT(between(value, fromMin, fromMax));
+    BASSERT(toMin < toMax);
+    return clamp(((value-fromMin)/(fromMax-fromMin))*(toMax-toMin)+toMin, toMin, toMax);
 }
 
 real math::sin(const real &calc)

@@ -10,6 +10,8 @@
 #include "blub/math/vector2.hpp"
 #include "blub/math/vector3int32.hpp"
 
+#include <ostream>
+
 
 /*#ifndef NO_OGRE3D
 #include <OGRE/OgreString.h>
@@ -52,6 +54,12 @@ string string::number(const quaternion &quat)
 
 string string::number(const transform &trans)
 {
-    return "{" + number(trans.position) + "," + number(trans.rotation) + "}";
+    return "{" + number(trans.position) + "," + number(trans.rotation) + "," + number(trans.scale) + "}";
 }
 
+
+
+std::ostream &operator <<(std::ostream &ostr, const string &toCast)
+{
+    return ostr << static_cast<std::string>(toCast);
+}

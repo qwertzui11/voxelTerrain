@@ -1,0 +1,80 @@
+/** @mainpage voxelTerrain
+@tableofcontents
+@version 1.1
+@author <a href="http://markus-lanner.com">Markus Lanner</a>
+@section intro Introduction
+The voxelTerrain library implements an <a href="https://en.wikipedia.org/wiki/Isosurface">iso surface</a> of <a href="https://en.wikipedia.org/wiki/Voxel">voxel</a>.
+I implmented several of extras, like serialization, synchronisation to file/network/database, renderer, ogre3d-wrapper, bullet-physics-wrapper and more.
+The focus is on an easy-to-use, very fast, editable terrain.
+For a a highly speed-optimized and threadable solution <a href="http://en.wikipedia.org/wiki/Marching_cubes">marching cubes</a>
+and for closing the gaps between two different level-of-details  <a href="http://www.terathon.com/voxels/">transvoxel</a> get used.
+It's easy to implement your own surface generation by simply implementing your own version of voxel::tile::accessor and voxel::tile::surface.
+This library is divided in several parts:
+- The namespace voxel::tile::container::* contains the actual voxel in form of arrays of a constant size. Always only one thread works on one tile.
+- The namespace voxel::simple::* contains tiles. For memory effectiveness these classes only save tiles that contain useable content.
+These classes represent one level-of-detail.
+If you don't need a terrain for your project use these classes for your voxel.
+The classes synchronize with each other:
+  - blub::procedural::voxel::simple::container holds the actual voxel.
+  - blub::procedural::voxel::simple::accessor copies the voxel from the container and produces highly-optimized arrays for the marching cubes and transvoxel algorithm.
+  - blub::procedural::voxel::simple::surface takes the voxel stored in the accessor and calculates the iso-surface.
+  - blub::procedural::voxel::simple::renderer takes vertices and indices stored in the surface.
+  Updates when to render which tile and sets which lod-crack to close.
+
+These classes dispatch all work on threads, so every tile gets calculated by one thread, but the tiles get calculated asynchronous/parallel.
+The speedup is nearly the amount of threads.
+- The namespace blub::procedural::voxel::terrain::* contains a variable amount of voxel::simple:: classes and produce an easy to use terrain.
+- The namespace blub::procedural::voxel::edit::* contains modifiers to the terrain. To implement your own modifier derive voxel::edit::base.
+
+Checkout the @ref examples to get yourself started.
+@image html voxel_crack.png A terrain with disabled transvoxel. The cracks are a result of tiles with different detail
+@image html voxel_crack_wire.png
+@section showcase Showcase
+@htmlonly
+The videos show large terrains.
+Please note that the lags only occur because of the recording software.
+<br/><iframe width="480" height="360" src="http://www.youtube.com/embed/7xTUvElNTj4?rel=0" frameborder="0" allowfullscreen></iframe>
+<iframe width="480" height="360" src="http://www.youtube.com/embed/stqgZTws_Z8?rel=0" frameborder="0" allowfullscreen></iframe><br/>
+@endhtmlonly
+@image html voxel_mesh.png Shows the results of mesh-to-voxel. The white mesh is the mesh that got converted.
+@image html voxel_multimaterial.png Uses a custom voxel-type. Every voxel saves additionally a colour which gets mapped to the generated vertices.
+@image html voxel_lod_wire.png Shows a simplex-noise generated terrain with 3 level of detail.
+@section compile Compilation
+Use <a href="http://cmake.org">cmake</a> to compile the library.
+
+@subsection compiler Tested compilers
+- gcc/mingw 4.8
+- clang 3.4
+
+The library uses several C++11 features like constexpr, enum class, lambda and more.
+So ensure you got an up-to-date compiler.
+
+@subsection dependencies Dependencies
+The only dependency mandatory is <a href="http://boost.org">boost</a>.
+Used gets
+<a href="http://www.boost.org/doc/libs/1_55_0/libs/bind/bind.html">boost::bind</a>,
+<a href="http://www.boost.org/doc/libs/1_55_0/doc/html/boost_asio.html">boost::asio</a> (used for dispatching work and synchronizing threads - Lock-free implementation),
+<a href="http://www.boost.org/doc/libs/1_55_0/doc/html/date_time.html">boost::date_time</a>,
+<a href="http://www.boost.org/doc/libs/1_55_0/doc/html/chrono.html">boost::chrono</a>,
+<a href="http://www.boost.org/doc/libs/1_55_0/libs/filesystem/doc/index.htm">boost::filesystem</a>,
+<a href="http://www.boost.org/doc/libs/1_55_0/doc/html/thread.html">boost::thread</a>,
+<a href="http://www.boost.org/doc/libs/1_55_0/doc/html/function.html">boost::function</a>,
+<a href="http://www.boost.org/doc/libs/1_55_0/libs/log/doc/html/log/detailed/sources.html">boost::log</a>,
+<a href="http://www.boost.org/doc/libs/1_55_0/libs/geometry/doc/html/index.html">boost::geometry</a> and
+<a href="http://www.boost.org/doc/libs/1_55_0/doc/html/signals2.html">boost::signals2</a>.
+
+@subsection opt_dependencies Optional dependencies
+- For mesh to voxel <a href="http://collada.org">collada</a> gets used.
+- The examples use <a href="http://ogre3d.org">ogre3d</a> for 3d-rendering and <a href="https://github.com/wgois/Object-oriented-Input-System--OIS-">OIS</a> for input handling.
+- If you'd like to serialize, check out <a href="http://www.boost.org/doc/libs/1_55_0/libs/serialization/doc/index.html">boost::serialization</a>.
+
+@section examples Examples
+- @ref primitives.cpp shows you how convert simple shapes to voxel and render them.
+If you are new to this library, start here.
+- @ref mesh.cpp shows you how to convert a scene loaded by <a href="http://collada.org">collada</a> to voxel and render it.
+- @ref noise.cpp uses the <a href="https://en.wikipedia.org/wiki/Simplex_noise">simplex noise</a> to create a random voxel-terrain.
+
+@section source Source
+The full source is available at <a href="https://github.com/qwertzui11/voxelTerrain">github</a>.
+
+*/

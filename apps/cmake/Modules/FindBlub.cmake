@@ -31,9 +31,11 @@ if (NOT Blub_FIND_COMPONENTS)
   set(Blub_FIND_COMPONENTS
     async
     core
+    database
     graphic
     gui
     input
+    log
     math
     network
     physic

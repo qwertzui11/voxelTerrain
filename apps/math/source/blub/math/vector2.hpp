@@ -1,7 +1,9 @@
-#ifndef VECTOR2_HPP
-#define VECTOR2_HPP
+#ifndef BLUB_VECTOR2_HPP
+#define BLUB_VECTOR2_HPP
 
 #include "blub/core/globals.hpp"
+#include "blub/serialization/access.hpp"
+#include "blub/serialization/nameValuePair.hpp"
 
 
 namespace Ogre
@@ -244,8 +246,19 @@ public:
 public:
     real x, y;
 
+protected:
+    BLUB_SERIALIZATION_ACCESS
+    template<typename Archive>
+    void serialize(Archive & readWrite, const unsigned int version)
+    {
+        (void)version;
+
+        readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(x);
+        readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(y);
+    }
+
 };
 
 }
 
-#endif // VECTOR2_HPP
+#endif // BLUB_VECTOR2_HPP

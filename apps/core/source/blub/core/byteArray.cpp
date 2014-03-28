@@ -1,5 +1,7 @@
 #include "blub/core/byteArray.hpp"
 
+#include "blub/core/string.hpp"
+
 #include <cstring>
 
 
@@ -22,6 +24,12 @@ byteArray::byteArray(const char *array, uint32 size)
     : t_base(size)
 {
     memcpy(t_base::data(), array, size);
+}
+
+byteArray::byteArray(const string &str)
+    : t_base(str.size())
+{
+    memcpy(t_base::data(), str.data(), str.size());
 }
 
 byteArray byteArray::mid(const uint32 &index, const int32 &length) const

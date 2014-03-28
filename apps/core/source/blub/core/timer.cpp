@@ -23,9 +23,3 @@ real timer::end()
     return sec.count();
 }
 
-real timer::endAndLog()
-{
-    real delta(end());
-    BOUT(string(m_outputText) + " timer::delta:" + string::number(delta));
-    return delta;
-}

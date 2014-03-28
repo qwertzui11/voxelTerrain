@@ -1,5 +1,5 @@
-#ifndef VECTOR3INT32_HPP
-#define VECTOR3INT32_HPP
+#ifndef BLUB_MATH_VECTOR3INT32_HPP
+#define BLUB_MATH_VECTOR3INT32_HPP
 
 
 #include "blub/core/globals.hpp"
@@ -53,9 +53,11 @@ public:
 
 };
 
+
+std::ostream &operator<<(std::ostream &os, const vector3int32 &toCast);
 std::size_t hash_value(const vector3int32& value);
 
 }
 
 
-#endif // VECTOR3INT32_HPP
+#endif // BLUB_MATH_VECTOR3INT32_HPP

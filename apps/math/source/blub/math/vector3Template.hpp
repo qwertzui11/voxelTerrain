@@ -116,6 +116,12 @@ public:
         return t_thisClass(x/other, y/other, z/other);
     }
 
+    valueType operator [] (const blub::uint8& index) const
+    {
+        BASSERT(index < 3);
+        return *((&x) + index);
+    }
+
     t_thisClass getMinimum(const t_thisClass& other)
     {
         return t_thisClass(math::min(other.x, x), math::min(other.y, y), math::min(other.z, z));

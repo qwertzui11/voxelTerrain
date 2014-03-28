@@ -1,6 +1,8 @@
 #ifndef MUTEXREADWRITE_HPP
 #define MUTEXREADWRITE_HPP
 
+#include "blub/async/predecl.hpp"
+
 #include <boost/thread/locks.hpp>
 #include <boost/thread/shared_mutex.hpp>
 

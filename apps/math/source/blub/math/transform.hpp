@@ -32,7 +32,23 @@ public:
     vector3 position;
     quaternion rotation;
     vector3 scale;
+
+protected:
+    BLUB_SERIALIZATION_ACCESS
+    template<typename Archive>
+    void serialize(Archive & readWrite, const unsigned int version)
+    {
+        (void)version;
+
+        readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(position);
+        readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(rotation);
+        readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(scale);
+    }
 };
+
+
+std::ostream& operator << (std::ostream& ostr, const blub::transform& toCast);
+
 
 }
 

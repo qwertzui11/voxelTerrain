@@ -1,5 +1,8 @@
 #include "updater.hpp"
 
+#include "blub/async/deadlineTimer.hpp"
+#include "blub/core/log.hpp"
+
 #include <boost/chrono.hpp>
 #include <boost/thread.hpp>
 #ifdef BLUB_LINUX
@@ -13,9 +16,8 @@ using namespace blub;
 
 updater::updater(const string &threadName)
     : dispatcher(0, true, threadName)
-    , m_workToDo(m_service)
-    , m_workToDoAfter(m_toDoAfter)
     , m_thread(nullptr)
+    , m_frameDeadline(nullptr)
     , m_stop(false)
 {
 }
@@ -23,6 +25,7 @@ updater::updater(const string &threadName)
 
 updater::~updater()
 {
+    blub::BOUT("destructor m_threadName:" + m_threadName);
     stop();
 }
 
@@ -55,25 +58,25 @@ void updater::run(const real& frames, const bool& threaded)
         return;
     }
     nameThread(0);
-    real delta = 0.01;
-    while(!m_stop)
+
+    if (m_frames != 0.)
     {
-        boost::chrono::system_clock::time_point start = boost::chrono::system_clock::now();
-        runOneFrame(1.0/m_frames);
-        boost::chrono::duration<double> sec = boost::chrono::system_clock::now() - start;
-        delta = sec.count();
-        if (frames > 0.0)
-        {
-            if (delta < 1.0/frames)
-            {
-#ifdef BLUB_WIN
-                Sleep( ((1.0/frames)-delta) *1000.0);
-#else
-                usleep( ((1.0/frames)-delta) *1000000.0);
-#endif
-            }
-        }
+        m_frameDeadline = new deadlineTimer(this);
     }
+
+    m_start = boost::chrono::system_clock::now();
+    if (m_frameDeadline != nullptr)
+    {
+        uint32 millis(static_cast<uint32>((1./m_frames)*1000.));
+        m_frameDeadline->addToDoOnTimeoutMilli(boost::bind(&updater::frame, this), millis);
+    }
+    else
+    {
+        post(boost::bind(&updater::frame, this));
+    }
+    dispatcher::start();
+
+    blub::BOUT("run end m_threadName:" + m_threadName);
 }
 
 bool updater::runOneFrame(const real& delta)
@@ -81,4 +84,19 @@ bool updater::runOneFrame(const real& delta)
     dispatcher::start();
     m_sigFrame(delta);
     return true;
+}
+
+void updater::frame()
+{
+    boost::chrono::duration<double> delta = boost::chrono::system_clock::now() - m_start;
+    m_start = boost::chrono::system_clock::now();
+    if (m_frameDeadline != nullptr && !m_stop)
+    {
+        m_frameDeadline->addToDoOnTimeoutMilli(boost::bind(&updater::frame, this), static_cast<uint32>((1./m_frames)*1000.));
+    }
+    m_sigFrame(delta.count());
+    if (m_frameDeadline == nullptr && !m_stop)
+    {
+        post(boost::bind(&updater::frame, this));
+    }
 }

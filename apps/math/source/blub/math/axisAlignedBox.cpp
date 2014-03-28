@@ -124,3 +124,9 @@ real axisAlignedBox::distance(const vector3 &v) const
     }
 }
 
+
+
+std::ostream &blub::operator<<(std::ostream &ostr, const axisAlignedBox &toCast)
+{
+    return ostr << "{" << toCast.getMinimum() << "," << toCast.getMaximum() << "}";
+}

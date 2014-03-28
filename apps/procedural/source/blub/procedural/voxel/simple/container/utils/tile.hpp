@@ -20,16 +20,25 @@ namespace utils
 {
 
 
+/**
+ * @brief The tileState enum defines opitimized states for a tile.
+ */
 enum class tileState
 {
     full,
     empty,
     partitial
 };
+
+
+/**
+ * @brief The tile class contains a state and the data itself. For memory optimization no data gets saved if state is full or empty
+ */
+template <class voxelType>
 class tile
 {
 public:
-    typedef sharedPointer<voxel::tile::container> t_tilePtr;
+    typedef sharedPointer<voxel::tile::container<voxelType> > t_tilePtr;
 
     tile()
         : state(tileState::empty)

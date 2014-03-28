@@ -33,6 +33,7 @@ set(CEF3_LIBRARY_WRAPPER
 #  find_package(Cairo REQUIRED) # already in gtk included
 #  find_package(GLIB REQUIRED) # already in gtk included
 find_package(GTK2 REQUIRED gtk)
+#  find_package(UDev REQUIRED)
 set (CEF3_INCLUDE_DIRS
       ${CEF3_INCLUDE_DIRS}
 #       ${CAIRO_INCLUDE_DIRS}
@@ -43,6 +44,7 @@ set (CEF3_INCLUDE_DIRS
 set (CEF3_LIBRARIES 
   ${CEF3_LIBRARY}
   ${CEF3_LIBRARY_WRAPPER}
+#  ${UDEV_LIBRARIES}
 )
 
 include(FindPackageHandleStandardArgs)

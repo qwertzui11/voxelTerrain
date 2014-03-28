@@ -2,6 +2,8 @@
 #define QUATERNION_HPP
 
 #include "blub/core/globals.hpp"
+#include "blub/serialization/access.hpp"
+#include "blub/serialization/nameValuePair.hpp"
 
 
 class btQuaternion;
@@ -105,7 +107,8 @@ namespace blub
 
         real Dot (const quaternion& rkQ) const;
         real Norm () const;
-        real normalise(void);
+        real normalise();
+        quaternion getNormalised() const;
         quaternion Inverse () const;  // apply to non-zero quaternion
         quaternion UnitInverse () const;  // apply to unit-length quaternion
         quaternion Exp () const;
@@ -157,7 +160,24 @@ namespace blub
     public:
         real w, x, y, z;
 
+    protected:
+        BLUB_SERIALIZATION_ACCESS
+        template<typename Archive>
+        void serialize(Archive & readWrite, const unsigned int version)
+        {
+            (void)version;
+
+            readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(x);
+            readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(y);
+            readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(z);
+            readWrite & BLUB_SERIALIZATION_NAMEVALUEPAIR(w);
+        }
+
     };
+
+
+    std::ostream& operator << (std::ostream& ostr, const quaternion& toCast);
+
 
 }
 

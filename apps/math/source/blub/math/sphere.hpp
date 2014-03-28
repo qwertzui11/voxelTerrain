@@ -1,5 +1,5 @@
-#ifndef SPHERE_HPP
-#define SPHERE_HPP
+#ifndef BLUB_SPHERE_HPP
+#define BLUB_SPHERE_HPP
 
 #include "vector3.hpp"
 
@@ -63,4 +63,4 @@ namespace blub
 
 }
 
-#endif // SPHERE_HPP
+#endif // BLUB_SPHERE_HPP

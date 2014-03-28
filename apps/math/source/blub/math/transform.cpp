@@ -63,3 +63,9 @@ transform transform::getRelativeTo(const transform &other) const
 
     return result;
 }
+
+
+std::ostream &blub::operator<< (std::ostream &ostr, const transform &toCast)
+{
+    return ostr << "{" << toCast.position << "," << toCast.rotation << "," << toCast.scale << "}";
+}

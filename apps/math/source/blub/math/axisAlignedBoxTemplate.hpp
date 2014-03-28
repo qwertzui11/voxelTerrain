@@ -89,7 +89,7 @@ public:
         setMinimumAndMaximum(ext, ext);
     }
 
-    bool isValid(void) const
+    bool isValid() const
     {
         return m_max >= m_min;
     }

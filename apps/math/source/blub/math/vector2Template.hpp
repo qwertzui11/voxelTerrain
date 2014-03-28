@@ -1,6 +1,10 @@
 #ifndef VECTOR2TEMPLATE_HPP
 #define VECTOR2TEMPLATE_HPP
 
+#include "blub/core/globals.hpp"
+#include "blub/serialization/access.hpp"
+#include "blub/serialization/nameValuePair.hpp"
+
 
 namespace blub
 {

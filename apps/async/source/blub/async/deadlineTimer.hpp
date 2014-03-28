@@ -24,7 +24,7 @@ public:
         BASSERT(m_listener != nullptr);
         m_timer.expires_from_now(boost::posix_time::millisec(milli));
         m_timer.async_wait(handler);
-    };
+    }
 
 protected:
     dispatcher* m_listener;

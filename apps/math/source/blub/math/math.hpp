@@ -3,6 +3,8 @@
 
 #include "blub/core/globals.hpp"
 
+#include <cmath>
+
 
 namespace blub
 {
@@ -10,19 +12,41 @@ namespace blub
 class math
 {
 public:
-    static const real pi;
+    static constexpr real pi = 3.14159265358979323846;
+    static constexpr real piHalf = math::pi/2.;
+    static constexpr real sqrtZeroPointFive = 0.707106781;
 
-    static real min(const real& num0, const real& num1);
-    static int32 min(const int32& num0, const int32& num1);
-    static real max(const real& num0, const real& num1);
-    static int32 max(const int32& num0, const int32& num1);
+    template <typename T>
+    static T min(const T &val, const T &minimum)
+    {
+        return std::min(val, minimum);
+    }
+    template <typename T>
+    static T max(const T &val, const T &maximum)
+    {
+        return std::max(val, maximum);
+    }
     static real abs(const real& calc);
-    static real saturate(const real& num, const real& min_, const real& max_);
 
-    static real clamp(const real& val, const real& minval, const real& maxval);
-    static int32 clamp(const int32& val, const int32& minval, const int32& maxval);
+    template <typename T>
+    static T clamp(const T& val, const T& minval, const T& maxval)
+    {
+        BASSERT(minval <= maxval);
+        return std::max(std::min(val, maxval), minval);
+    }
 
-    static real floor(const real& calc);
+    static real map(const real &value, const real &fromMin, const real &fromMax, const real &toMin, const real &toMax);
+
+    template <typename T>
+    static T floor(const T& calc)
+    {
+        return std::floor(calc);
+    }
+    template <typename T>
+    static T ceil(const T& val)
+    {
+        return std::ceil(val);
+    }
 
     static real sin(const real& calc);
     static real asin(const real& calc);

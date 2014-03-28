@@ -1,6 +1,7 @@
 #ifndef BLUB_GLOBALS_HPP
 #define BLUB_GLOBALS_HPP
 
+#cmakedefine BLUB_BUILD_DATABASE
 #cmakedefine BLUB_BUILD_GRAPHIC
 #cmakedefine BLUB_BUILD_GUI
 #cmakedefine BLUB_BUILD_INPUT
@@ -12,13 +13,12 @@
 #cmakedefine BLUB_BUILD_SYNC
 #cmakedefine BLUB_BUILD_WEB
 
-#cmakedefine BLUB_DEBUG
-#cmakedefine BLUB_RELEASE
-
 #cmakedefine BLUB_USE_OGRE3D
 #cmakedefine BLUB_USE_OIS
 #cmakedefine BLUB_USE_BULLET
 #cmakedefine BLUB_USE_CEF3
+#cmakedefine BLUB_USE_ASSIMP
+#cmakedefine BLUB_USE_SOCI
 
 #ifndef BLUB_USE_OGRE3D
 #    define BLUB_NO_OGRE3D
@@ -26,10 +26,20 @@
 #ifndef BLUB_USE_BULLET
 #    define BLUB_NO_BULLET
 #endif
+#ifndef BLUB_USE_CEF3
+#    define BLUB_NO_CEF3
+#endif
 #define BLUB_LINUX
 
 // #define BLUB_LOG_UDP
 // #define BLUB_LOG_TCP
+// #define BLUB_LOG_PROCEDURAL_VOXEL_EDIT_MESH
+
+#ifndef NDEBUG
+#define BLUB_DEBUG
+#else
+#define BLUB_RELEASE
+#endif
 
 
 #ifdef BLUB_DEBUG
@@ -65,15 +75,18 @@ class portable_binary_oarchive;
 
 namespace blub
 {
-    typedef signed char int8;         /* 8 bit signed */
-    typedef unsigned char uint8;      /* 8 bit unsigned */
-    typedef short int16;              /* 16 bit signed */
-    typedef unsigned short uint16;    /* 16 bit unsigned */
-    typedef int int32;                /* 32 bit signed */
-    typedef unsigned int uint32;      /* 32 bit unsigned */
-    typedef long long int64;           /* 64 bit signed */
-    typedef unsigned long long uint64; /* 64 bit unsigned */
-    typedef float real;
+    typedef signed char int8;         /**< 8 bit signed */
+    typedef unsigned char uint8;      /**< 8 bit unsigned */
+    typedef short int16;              /**< 16 bit signed */
+    /**
+     * @brief uint16 16 bit unsigned.
+     */
+    typedef unsigned short uint16;    /**< 16 bit unsigned */
+    typedef int int32;                /**< 32 bit signed */
+    typedef unsigned int uint32;      /**< 32 bit unsigned */
+    typedef long long int64;           /**< 64 bit signed */
+    typedef unsigned long long uint64; /**< 64 bit unsigned */
+    typedef float real;               /**< floating point */
 
 #ifdef BLUB_DEBUG
 #   define BASSERT(x) assert(x)
@@ -108,7 +121,6 @@ namespace blub
     class ray;
     template <class S, class T>
     class map;
-    class math;
     template<class classType>
     class ownsOwnSharedPointer;
     template <typename first, typename second>
@@ -134,6 +146,7 @@ namespace blub
     class vector2int32;
     class vector3;
     class vector3int32;
+    class vector3uint8;
     template <typename T>
     class weakPointer;
 
@@ -147,26 +160,6 @@ namespace blub
         }
     }
 
-    namespace graphic {
-        class camera;
-        class entity;
-        class material;
-        class mesh;
-        class moveable;
-        class node;
-        class scene;
-        class shader;
-        class system;
-        class texture;
-        namespace sky {
-            class system;
-        }
-        namespace voxel {
-            namespace surface {
-                class tile;
-            }
-        }
-    }
     namespace gui {
         class renderWindow;
     }
@@ -230,6 +223,7 @@ namespace blub
         class system;
         namespace constraint {
             class base;
+            class fixed;
             class sixAxis;
         }
         namespace gravity {
@@ -253,7 +247,9 @@ namespace blub
         {
             namespace surface
             {
+                template <class voxelType>
                 class multipleTiles;
+                template <class voxelType>
                 class tile;
             }
         }
@@ -288,17 +284,23 @@ namespace blub
         namespace voxel {
             namespace accessor {
                 namespace multipleTiles {
+                    template <class voxelType>
                     class receiver;
+                    template <class voxelType, class identifierType = identifier>
                     class sender;
                 }
                 namespace terrain {
+                    template <class voxelType>
                     class receiver;
+                    template <class voxelType, class identifierType = identifier>
                     class sender;
                 }
             }
             namespace container {
                 namespace multipleTiles {
+                    template <class voxelType>
                     class receiver;
+                    template <class voxelType>
                     class sender;
                 }
             }

@@ -1,6 +1,7 @@
 message("doing async")
 
 set(sources
+log/global.cpp
 dispatcher.cpp
 deadlineTimer.cpp
 seperate.cpp
@@ -9,6 +10,7 @@ PARENT_SCOPE
 )
 
 set(headers
+log/global.hpp
 deadlineTimer.hpp
 dispatcher.hpp
 mutex.hpp

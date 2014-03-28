@@ -7,6 +7,7 @@
 #include "blub/core/hashMap.hpp"
 #include "blub/core/signal.hpp"
 #include "blub/math/vector3int32.hpp"
+#include "blub/procedural/log/global.hpp"
 #include "blub/procedural/voxel/simple/accessor.hpp"
 
 #include <boost/signals2/connection.hpp>
@@ -22,54 +23,236 @@ namespace simple
 {
 
 
-class surface : public base<sharedPointer<tile::surface> >
+/**
+ * @brief The surface class convertes accessor-tiles to surface-tiles. In between polygons get calculated by the surface-tile.
+ */
+template <class voxelType>
+class surface : public base<sharedPointer<tile::surface<voxelType> > >
 {
 public:
-    typedef sharedPointer<tile::surface> t_tilePtr;
-    typedef vector3int32 t_tileId;
-
+    typedef tile::surface<voxelType> t_tile;
+    typedef sharedPointer<t_tile> t_tilePtr;
     typedef base<t_tilePtr> t_base;
+
+    typedef typename t_base::t_tileId t_tileId;
 
     typedef hashMap<t_tileId, t_tilePtr> t_tilesMap;
     typedef hashList<vector3int32> t_tileIdList;
 
-    typedef sharedPointer<tile::accessor> t_tileAccessorPtr;
+    typedef tile::container<voxelType> t_tileContainer;
+
+    typedef tile::accessor<voxelType> t_tileAccessor;
+    typedef sharedPointer<t_tileAccessor> t_tileAccessorPtr;
     typedef base<t_tileAccessorPtr> t_voxelAccessor;
 
+
+    /**
+     * @brief surface constructor.
+     * @param worker May getting called by several threads.
+     * @param voxels The accessor to which this class listens for updates to.
+     * @param lod Indicates the lod. 0 for highest detail, 1 for half detail and so on.
+     */
     surface(blub::async::dispatcher &worker,
             t_voxelAccessor& voxels,
-            const int32& lod,
-            const real& voxelSize);
-    virtual ~surface();
+            const int32& lod)
+        : t_base(worker)
+        , m_voxels(voxels)
+        , m_lod(lod)
+        , m_numTilesInWork(0)
+    {
+        voxels.signalEditDone()->connect(boost::bind(&surface::editDone, this));
 
-    int32 getTileCount() const;
-    const real& getVoxelSize(void) const;
+        t_base::setCreateTileCallback(boost::bind(&t_tile::create));
+    }
+    /**
+     * @brief ~surface destructor.
+     */
+    virtual ~surface()
+    {
+        ;
+    }
 
-    t_tilePtr getTile(const blub::vector3int32& id) const;
-    t_tilePtr getOrCreateTile(const blub::vector3int32& id) const;
+    /**
+     * @brief getTileCount returns the tile count calculated by this class. Read-lock class before calling.
+     * @return Always a positive value.
+     */
+    int32 getTileCount() const
+    {
+        return m_tiles.size();
+    }
+    /**
+     * @brief getVoxelSize returns the voxel-size.
+     * @return pow(2, lod)
+     */
+    real getVoxelSize() const
+    {
+        return math::pow(2., m_lod);
+    }
 
-    void editDone(void);
+    /**
+     * @brief getTile returns a surface-tile. Lock-read class before.
+     * @param id TileId
+     * @return If not found returns nullptr.
+     */
+    t_tilePtr getTile(const blub::vector3int32& id) const
+    {
+        typename t_tilesMap::const_iterator it(m_tiles.find(id));
+        if (it == m_tiles.cend())
+        {
+            return nullptr;
+        }
+        return it->second;
+    }
 
-private:
-    static t_tilePtr createTile(void);
+    /**
+     * @brief getOrCreateTile returns same like getTile() except that when not found instances a new tile.
+     * @param id TileId.
+     * @return Never nullptr.
+     * @see getTile()
+     */
+    t_tilePtr getOrCreateTile(const blub::vector3int32& id) const
+    {
+        t_tilePtr workTile(getTile(id));
+        if (workTile.isNull())
+        {
+            return t_base::createTile();
+        }
+        return workTile;
+    }
 
-    void setTileAccessorMaster(const accessor::t_tileId &id, const accessor::t_tilePtr &toSet);
-    void removeTileMaster(const accessor::t_tileId& id);
+protected:
+    /**
+     * @brief editDone gets called when data in accessor changed.
+     */
+    void editDone()
+    {
+        m_voxels.lockForRead();
 
-    void editDoneMaster();
+        t_base::m_master.post(boost::bind(&surface::editDoneMaster, this));
+    }
 
-    void calculateSurfaceTS(const t_tileId id, accessor::t_tilePtr work, t_tilePtr workTile);
-    void afterCalculateSurfaceMaster(const t_tileId& id, t_tilePtr workTile);
+    /**
+     * @brief editDoneMaster same like editDone() but on master-thread.
+     * Write locks class, dispatches surface generation to worker threads.
+     * @see editDone()
+     */
+    void editDoneMaster()
+    {
+        const typename t_voxelAccessor::t_tilesGotChangedMap& change(m_voxels.getTilesThatGotEdited());
+        if (change.empty())
+        {
+            blub::BWARNING("change.empty()");
+            return;
+        }
+
+        t_base::lockForEditMaster();
+
+        BASSERT(m_numTilesInWork == 0);
+        m_numTilesInWork = change.size();
+
+        for (auto work : change)
+        {
+            if (work.second.isNull())
+            {
+                afterCalculateSurfaceMaster(work.first, nullptr);
+                continue;
+            }
+
+            BASSERT(!work.second->isEmpty());
+            BASSERT(!work.second->isFull());
+
+            t_tilePtr workTile(getTile(work.first));
+
+            t_base::m_worker.post(boost::bind(&surface::calculateSurfaceTS, this, work.first, work.second, workTile));
+        }
+    }
+
+    /**
+     * @brief calculateSurfaceTS gets called by editDoneMaster(), by any worker-thread.
+     * Calls afterCalculateSurfaceMaster() after work is done.
+     * @param id TileId
+     * @param work The accessorTile to turn into a surface-tile.
+     * @param workTile the resulting surface tile.
+     * @see editDoneMaster()
+     */
+    void calculateSurfaceTS(const t_tileId id, t_tileAccessorPtr work, t_tilePtr workTile)
+    {
+        if (workTile.isNull())
+        {
+            workTile = t_base::createTile();
+        }
+        workTile->calculateSurface(work,
+                                   getVoxelSize(),
+                                   true,
+                                   m_lod);
+
+        if (workTile->getIndices().empty())
+        {
+#ifdef BLUB_LOG_VOXEL_SURFACE
+            BLUB_PROCEDURAL_LOG_WARNING() << "workTile->getIndices().empty() id:" << id << " m_lod:" << m_lod << " work->getNumVoxelLargerZero():" << work->getNumVoxelLargerZero();
+#endif
+            t_base::m_master.post(boost::bind(&surface::afterCalculateSurfaceMaster, this, id, nullptr));
+            return;
+        }
+
+        t_base::m_master.post(boost::bind(&surface::afterCalculateSurfaceMaster, this, id, workTile));
+    }
+
+    /**
+     * @brief afterCalculateSurfaceMaster gets called by calculateSurfaceTS() on master-thread.
+     * @param id TileId
+     * @param workTile The reulting surface-tile. If no polygons got created it is nullptr.
+     * @see calculateSurfaceTS()
+     */
+    void afterCalculateSurfaceMaster(const t_tileId& id, t_tilePtr workTile)
+    {
+#ifdef BLUB_LOG_VOXEL_SURFACE
+        BOUT("afterCalculateSurfaceMaster id:" + blub::string::number(id));
+#endif
+
+        typename t_tilesMap::const_iterator it(m_tiles.find(id));
+
+        int32 numIndices(0);
+        if (!workTile.isNull())
+        {
+            numIndices = workTile->getIndices().size();
+        }
+
+        // no indices
+        if (numIndices == 0)
+        {
+            if (it != m_tiles.cend())
+            {
+                t_base::addToChangeList(id, nullptr);
+                m_tiles.erase_return_void(it);
+            }
+        }
+        else
+        {
+            BASSERT(!workTile.isNull());
+            if (it == m_tiles.cend())
+            {
+                m_tiles.insert(id, workTile);
+            }
+            t_base::addToChangeList(id, workTile);
+        }
+
+        --m_numTilesInWork;
+        BASSERT(m_numTilesInWork >= 0);
+        if (m_numTilesInWork == 0)
+        {
+            m_voxels.unlockRead();
+            t_base::unlockForEditMaster();
+        }
+    }
 
 
 private:
     t_tilesMap m_tiles;
 
     t_voxelAccessor &m_voxels;
-    int32 m_tileSize;
     int32 m_lod;
     int32 m_numTilesInWork;
-    real m_voxelSize;
 
     boost::signals2::scoped_connection m_connTilesGotChanged;
 
@@ -80,5 +263,6 @@ private:
 }
 }
 }
+
 
 #endif // PROCEDURAL_VOXEL_SIMPLE_SURFACE_HPP

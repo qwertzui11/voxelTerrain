@@ -122,30 +122,30 @@ public:
 
 
     /** Gets the minimum corner of the box.
-    */
+     */
     inline const vector3& getMinimum(void) const
     {
         return mMinimum;
     }
 
     /** Gets a modifiable version of the minimum
-    corner of the box.
-    */
+     * corner of the box.
+     */
     inline vector3& getMinimum(void)
     {
         return mMinimum;
     }
 
     /** Gets the maximum corner of the box.
-    */
+     */
     inline const vector3& getMaximum(void) const
     {
         return mMaximum;
     }
 
     /** Gets a modifiable version of the maximum
-    corner of the box.
-    */
+     * corner of the box.
+     */
     inline vector3& getMaximum(void)
     {
         return mMaximum;
@@ -169,7 +169,7 @@ public:
     }
 
     /** Changes one of the components of the minimum corner of the box
-    used to resize only one dimension of the box
+    * used to resize only one dimension of the box
     */
     inline void setMinimumX(real x)
     {
@@ -203,7 +203,7 @@ public:
     }
 
     /** Changes one of the components of the maximum corner of the box
-    used to resize only one dimension of the box
+     * used to resize only one dimension of the box
     */
     inline void setMaximumX( real x )
     {
@@ -279,7 +279,7 @@ public:
     }
 
     /** Merges the passed in box into the current box. The result is the
-    box which encompasses both.
+     * box which encompasses both.
     */
     void merge( const axisAlignedBox& rhs )
     {
@@ -604,6 +604,8 @@ private:
     BLUB_SERIALIZATION_SAVELOAD()
 
 };
+
+std::ostream& operator<< (std::ostream& ostr, const axisAlignedBox& toCast);
 
 
 }

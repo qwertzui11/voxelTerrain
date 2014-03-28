@@ -1,10 +1,21 @@
-#ifndef INTERSECTION_HPP
-#define INTERSECTION_HPP
+#ifndef BLUB_MATH_INTERSECTION_HPP
+#define BLUB_MATH_INTERSECTION_HPP
+
+#include "blub/core/globals.hpp"
+
+
+namespace blub
+{
+
 
 class intersection
 {
 public:
-
+    static bool intersect(const ray &ray_, const triangleVector3 &triangle_, vector3* position);
 };
 
-#endif // INTERSECTION_HPP
+
+}
+
+
+#endif // BLUB_MATH_INTERSECTION_HPP

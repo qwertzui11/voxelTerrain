@@ -2,8 +2,6 @@ namespace blub
 {
 namespace procedural
 {
-    class plane;
-    class sphere;
     namespace voxel
     {
         class data;
@@ -11,9 +9,13 @@ namespace procedural
         {
             template <class classType>
             class base;
+            template <class voxelType>
             class container;
+            template <class voxelType>
             class accessor;
+            template <class voxelType>
             class renderer;
+            template <class voxelType>
             class surface;
         }
         namespace simple
@@ -24,30 +26,51 @@ namespace procedural
             {
                 namespace utils
                 {
+                    template <class voxelType>
+                    class database;
                     enum class tileState;
+                    template <class voxelType>
                     class tile;
                 }
+                template <class voxelType>
                 class base;
+                template <class voxelType>
                 class inMemory;
+                template <class voxelType>
                 class database;
             }
+            template <class voxelType>
             class accessor;
+            template <class voxelType>
             class renderer;
+            template <class voxelType>
             class surface;
         }
         namespace terrain
         {
             template <class dataType>
             class base;
+            template <class voxelType>
             class accessor;
+            template <class voxelType>
             class renderer;
+            template <class voxelType>
             class surface;
         }
         namespace edit
         {
+            template <class voxelType>
+            class axisAlignedBox;
+            template <class voxelType>
             class base;
-            class sphere;
+            template <class voxelType>
             class box;
+            template <class voxelType>
+            class mesh;
+            template <class voxelType>
+            class noise;
+            template <class voxelType>
+            class sphere;
         }
     }
 }

@@ -1,17 +1,15 @@
-#ifndef STRINGLIST_HPP
-#define STRINGLIST_HPP
+#ifndef BLUB_CORE_STRINGLIST_HPP
+#define BLUB_CORE_STRINGLIST_HPP
 
 #include "blub/core/string.hpp"
+#include "blub/core/vector.hpp"
+
 
 namespace blub
 {
 
-    /*class stringList : QStringList
-    {
-    public:
-        stringList(QStringList lst);
-    };*/
+    typedef vector<string> stringList;
 
 }
 
-#endif // STRINGLIST_HPP
+#endif // BLUB_CORE_STRINGLIST_HPP

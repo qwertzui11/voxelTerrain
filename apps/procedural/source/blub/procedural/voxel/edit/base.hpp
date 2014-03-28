@@ -1,11 +1,17 @@
-#ifndef VOXEL_EDIT_BASE_HPP
-#define VOXEL_EDIT_BASE_HPP
+#ifndef BLUB_PROCEDURAL_VOXEL_EDIT_BASE_HPP
+#define BLUB_PROCEDURAL_VOXEL_EDIT_BASE_HPP
 
 
 #include "blub/core/enableSharedFromThis.hpp"
 #include "blub/core/globals.hpp"
+#include "blub/core/noncopyable.hpp"
+#include "blub/math/axisAlignedBox.hpp"
+#include "blub/math/plane.hpp"
+#include "blub/math/transform.hpp"
 #include "blub/math/vector3int32.hpp"
 #include "blub/procedural/predecl.hpp"
+#include "blub/procedural/voxel/simple/container/base.hpp"
+#include "blub/procedural/voxel/tile/container.hpp"
 
 
 namespace blub
@@ -18,31 +24,290 @@ namespace edit
 {
 
 
-class base : public enableSharedFromThis<base>
+/**
+ * @brief base class of all edits. Has various features you may wanna overwrite.
+ * If you want to write your own edit overwrite the method calculateOneVoxel() or calculateVoxel(). For most flexibility override calculateVoxel().
+ * Because base derives enableSharedFromThis you have to write a create method that creates a shared_ptr of the class.
+ */
+template <class voxelType>
+class base : public enableSharedFromThis<base<voxelType> >, public blub::noncopyable
 {
 public:
-    typedef enableSharedFromThis<base> t_base;
-    typedef sharedPointer<base> pointer;
+    typedef enableSharedFromThis<base<voxelType> > t_base;
+    typedef sharedPointer<base<voxelType> > pointer;
+    typedef simple::container::base<voxelType> t_voxelContainerSimple;
+    typedef tile::container<voxelType> t_voxelContainerTile;
 
-    virtual ~base();
+    /**
+     * @brief destructor
+     */
+    virtual ~base()
+    {
+    }
 
-    virtual blub::axisAlignedBox getAxisAlignedBoundingBox(const real& voxelSize, const transform& trans) const = 0;
+    /**
+     * @brief calculates voxel in the container u have to set by setVoxelContainer() before.
+     * If setVoxelContainer() didn't get called before, method will assert.
+     * @param trans The transform used on every voxel position before calling calculateOneVoxel().
+     */
+    void calculateVoxel(const transform &trans) const
+    {
+        BASSERT(m_voxelContainer != nullptr);
 
-    void calculateVoxel(const transform &trans) const;
-    virtual void calculateVoxel(tile::container* voxelContainer, const vector3int32& voxelContainerOffset, const real& voxelScale, const transform &trans) const;
+        m_voxelContainer->editVoxel(t_base::getSharedThisPtr(), trans);
+    }
 
-    void setCut(const bool& cut);
-    const bool &getCut(void) const;
+    /**
+     * @brief calculates all voxel in getAxisAlignedBoundingBox() and inserts them into voxelContainer.
+     * Method gets called once per tile from various threads.
+     * Voxel only will get set if the interpolation is higher than the inerpoaltion before calculation.
+     * @param voxelContainer The container where the voxel have to get set in.
+     * @param voxelContainerOffset The absolut offset of the container
+     * @param trans The transform of the edit.
+     */
+    virtual void calculateVoxel(t_voxelContainerTile* voxelContainer,
+                                const vector3int32& voxelContainerOffset,
+                                const transform &trans) const
+    {
+        const vector3int32 posContainerAbsolut(voxelContainerOffset*t_voxelContainerTile::voxelLength);
+        for (int32 indX = 0; indX < t_voxelContainerTile::voxelLength; ++indX)
+        {
+            for (int32 indY = 0; indY < t_voxelContainerTile::voxelLength; ++indY)
+            {
+                for (int32 indZ = 0; indZ < t_voxelContainerTile::voxelLength; ++indZ)
+                {
+                    const vector3int32 posVoxel(indX, indY, indZ);
+                    vector3 posAbsolut(posContainerAbsolut + posVoxel);
 
-    void setVoxelContainer(simple::container::base* toSet);
-    simple::container::base*  getVoxelContainer() const;
+                    posAbsolut -= trans.position;
+                    posAbsolut /= trans.scale;
+
+                    voxelType voxelResult;
+                    const bool changeVoxel(calculateOneVoxel(posAbsolut, &voxelResult));
+
+                    if (!changeVoxel)
+                    {
+                        continue;
+                    }
+                    if (!m_cut)
+                    {
+                        voxelContainer->setVoxelIfInterpolationHigher(posVoxel, voxelResult);
+                    }
+                    else
+                    {
+                        voxelResult.getInterpolation() *= -1;
+                        voxelContainer->setVoxelIfInterpolationLower(posVoxel, voxelResult);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @brief Enable or disable cut. Don't change the value while active calculation.
+     * @param cut If true voxel will get removed instead in added.
+     */
+    void setCut(const bool& cut)
+    {
+        m_cut = cut;
+    }
+    /**
+     * @brief Returns if cutting is enabled.
+     * @return Returns the setted value by setCut() or default false.
+     */
+    const bool &getCut() const
+    {
+        return m_cut;
+    }
+
+    /**
+     * @brief Sets the voxelcontainer used by calculateVoxel().
+     * @param toSet Must not be nullptr.
+     */
+    void setVoxelContainer(t_voxelContainerSimple* toSet)
+    {
+        m_voxelContainer = toSet;
+    }
+    /**
+     * @return Returns voxelContainer set by setVoxelContainer()
+     */
+    t_voxelContainerSimple* getVoxelContainer() const
+    {
+        return m_voxelContainer;
+    }
 
 protected:
-    base();
-    virtual bool calculateOneVoxel(const vector3& pos, const real& voxelSize, data* resultVoxel) const = 0;
+    base()
+        : m_voxelContainer(nullptr)
+        , m_cut(false)
+    {
+    }
+
+    friend t_voxelContainerSimple;
+
+    /**
+     * @brief getAxisAlignedBoundingBox returns the transformed blub::axisAlignedBox in which the voxel have to get recalculated.
+     * @param trans
+     * @return
+     */
+    virtual blub::axisAlignedBox getAxisAlignedBoundingBox(const transform& trans) const = 0;
+    /**
+     * @brief Implement this method for your own edit
+     * @param pos describes the voxel-position
+     * @param resultVoxel if a value could get calculated, set it to resultVoxel.
+     * @return true if it was possible to calculate a value.
+     */
+    virtual bool calculateOneVoxel(const vector3& pos, voxelType* resultVoxel) const
+    {
+        return false;
+    }
+
+    /**
+     * @brief The axis enum is used by createLine() for describing the direction.
+     */
+    enum class axis
+    {
+        x,
+        y,
+        z
+    };
+
+    /**
+     * @brief createLine creates a voxel-line on one axis with a specific length
+     * @param voxelContainer Where to create the line in. Must not be nullptr
+     * @param posVoxel The relative voxel position in 2d. The value definied by ax will be ignored.
+     * @param from Start value from where to start the line. Not a an integer because of interpolation.
+     * @param len length value added to start of the line. Not a an integer because of interpolation. Must be larger/equal zero
+     * @param ax The axis on which the line should get generated
+     * @param planeA first cutPlane. See blub::procedural::voxel::edit::box for usage. Used for interpolation.
+     * @param planeB second cutPlane. See blub::procedural::voxel::edit::box for usage. Used for interpolation.
+     */
+    virtual void createLine(t_voxelContainerTile *voxelContainer,
+                            const vector3int32 &posVoxel,
+                            const real &from,
+                            const real &len,
+                            const axis &ax,
+                            const blub::plane &planeA,
+                            const blub::plane &planeB) const
+    {
+        const real &pointA(from);
+        real pointB;
+        vector3int32 lineAxis;
+        switch (ax)
+        {
+        case axis::x:
+            pointB = pointA+len;
+            lineAxis = vector3int32(1, 0, 0);
+            break;
+        case axis::y:
+            pointB = pointA+len;
+            lineAxis = vector3int32(0, 1, 0);
+            break;
+        case axis::z:
+            pointB = pointA+len;
+            lineAxis = vector3int32(0, 0, 1);
+            break;
+        default:
+            BASSERT(false);
+        }
+
+        voxelType bufferVoxel;
+
+        int32 voxelStartRel(0);
+        int32 voxelEndRel(0);
+        const real level(0.5); // cos(60 Degree)
+        {
+            {
+                real roundedDown(blub::math::floor(pointA));
+                if (roundedDown >= 0 && roundedDown < t_voxelContainerTile::voxelLength)
+                {
+                    if (vector3(lineAxis).dotProduct(planeA.normal) <= -level)
+                    {
+                        real valueDown(roundedDown-pointA);
+                        real zResultDown(127.*valueDown);
+                        BASSERT(zResultDown <= 0.);
+                        BASSERT(zResultDown >= -127.);
+                        bufferVoxel.setInterpolation(zResultDown);
+                        setVoxel(voxelContainer, posVoxel + vector3int32(roundedDown)*lineAxis, bufferVoxel);
+                    }
+                    ++voxelStartRel;
+                }
+            }
+            {
+                real roundedUp(blub::math::ceil(pointA));
+                if (roundedUp >= 0. && roundedUp < t_voxelContainerTile::voxelLength)
+                {
+                    if (vector3(lineAxis).dotProduct(planeA.normal) <= -level)
+                    {
+                        real valueUp(roundedUp-pointA);
+                        real zResultUp(127.*valueUp);
+                        BASSERT(zResultUp >= 0.);
+                        BASSERT(zResultUp <= 127.);
+                        bufferVoxel.setInterpolation(zResultUp);
+                        setVoxel(voxelContainer, posVoxel + vector3int32(roundedUp)*lineAxis, bufferVoxel);
+                    }
+                    ++voxelStartRel;
+                }
+            }
+        }
+        {
+            {
+                real roundedDown(blub::math::floor(pointB));
+                if (roundedDown >= 0 && roundedDown < t_voxelContainerTile::voxelLength)
+                {
+                    if (vector3(lineAxis).dotProduct(planeB.normal) >= level)
+                    {
+                        real valueDown(roundedDown-pointB);
+                        real zResultDown(127.*valueDown);
+                        BASSERT(zResultDown <= 0.);
+                        BASSERT(zResultDown >= -127.);
+                        bufferVoxel.setInterpolation(-zResultDown);
+                        setVoxel(voxelContainer, posVoxel + vector3int32(roundedDown)*lineAxis, bufferVoxel);
+                    }
+                    ++voxelEndRel;
+                }
+            }
+            {
+                real roundedUp(blub::math::ceil(pointB));
+                if (roundedUp >= 0. && roundedUp < t_voxelContainerTile::voxelLength)
+                {
+                    if (vector3(lineAxis).dotProduct(planeB.normal) >= level)
+                    {
+                        real valueUp(roundedUp-pointB);
+                        real zResultUp(127.*valueUp);
+                        BASSERT(zResultUp >= 0.);
+                        BASSERT(zResultUp <= 127.);
+                        bufferVoxel.setInterpolation(-zResultUp);
+                        setVoxel(voxelContainer, posVoxel + vector3int32(roundedUp)*lineAxis, bufferVoxel);
+                    }
+                    ++voxelEndRel;
+                }
+            }
+        }
+        {
+            real cutPointVoxelDown = blub::math::floor(pointA);
+            real cutPointVoxelUp = blub::math::ceil(pointB+1);
+
+            int32 voxelClampedStart = math::clamp<real>(cutPointVoxelDown, 0., t_voxelContainerTile::voxelLength);
+            int32 voxelClampedEnd = math::clamp<real>(cutPointVoxelUp, 0., t_voxelContainerTile::voxelLength);
+
+            for (int32 ind = voxelClampedStart + voxelStartRel; ind < voxelClampedEnd - voxelEndRel; ++ind)
+            {
+                bufferVoxel.setInterpolation(0);
+                setVoxel(voxelContainer, posVoxel + vector3int32(ind)*lineAxis, bufferVoxel);
+            }
+        }
+    }
+
+
+private:
+    virtual void setVoxel(t_voxelContainerTile *voxelContainer, const vector3int32 &posVoxel, voxelType &toSet) const
+    {
+        voxelContainer->setVoxelIfInterpolationHigher(posVoxel, toSet);
+    }
 
 protected:
-    simple::container::base*  m_voxelContainer;
+    t_voxelContainerSimple*  m_voxelContainer;
 
     bool m_cut;
 
@@ -55,4 +320,4 @@ protected:
 }
 
 
-#endif // VOXEL_EDIT_BASE_HPP
+#endif // BLUB_PROCEDURAL_VOXEL_EDIT_BASE_HPP
