@@ -70,8 +70,8 @@ public:
         }
         renderSystem->initialise(true);
 
-        // renderScene = renderSystem->createSceneManager(Ogre::ST_GENERIC);
-        renderScene = renderSystem->createSceneManager("OctreeSceneManager");
+        renderScene = renderSystem->createSceneManager(Ogre::ST_GENERIC);
+        // renderScene = renderSystem->createSceneManager("OctreeSceneManager");
 
 //        Ogre::ResourceGroupManager::getSingleton().addResourceLocation("../data", "FileSystem");
 //        Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();

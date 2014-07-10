@@ -107,7 +107,7 @@ int main(int /*argc*/, char* /*argv*/[])
 
     // create voxel
     {
-        voxel::edit::noise<t_voxel>::pointer noise(voxel::edit::noise<t_voxel>::create(axisAlignedBox(vector3(-100., -5., -100), vector3(100., 0., 100.)), vector3(0.025)));
+        voxel::edit::noise<t_voxel>::pointer noise(voxel::edit::noise<t_voxel>::create(axisAlignedBox(vector3(-100., -100., -100), vector3(100., 100., 100.)), vector3(0.025)));
         voxelContainer->editVoxel(noise);
     }
 
