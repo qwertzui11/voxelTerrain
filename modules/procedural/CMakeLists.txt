@@ -1,8 +1,6 @@
-message("doing procedural")
 
 set(sources
 log/global.cpp
-PARENT_SCOPE
 )
 
 set(headers
@@ -32,7 +30,6 @@ voxel/tile/base.hpp
 voxel/tile/surface.hpp
 voxel/tile/container.hpp
 voxel/tile/renderer.hpp
-PARENT_SCOPE
 )
 
-
+add_module(procedural)

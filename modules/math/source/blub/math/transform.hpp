@@ -4,8 +4,15 @@
 #include "blub/core/globals.hpp"
 #include "blub/math/vector3.hpp"
 #include "blub/math/quaternion.hpp"
+#ifdef BLUB_USE_PHYSX
+#   include <foundation/PxTransform.h>
+#endif
 
+
+#ifdef BLUB_USE_BULLET
 class btTransform;
+#endif
+
 
 namespace blub
 {
@@ -16,7 +23,14 @@ public:
     transform(const vector3& position_ = vector3(), const quaternion& rotation_ = quaternion(), const vector3& scale_ = vector3(1.));
     //depricated transform(const transform& other);
 
-#ifndef BLUB_NO_BULLET
+#ifdef BLUB_USE_PHYSX
+    transform(const physx::PxTransform& other)
+        : position(other.p), rotation(other.q), scale(1.)
+    {}
+    operator physx::PxTransform() const
+    {return physx::PxTransform(position, rotation);}
+#endif
+#ifdef BLUB_USE_BULLET
     transform(const btTransform& other);
     operator btTransform() const;
 #endif

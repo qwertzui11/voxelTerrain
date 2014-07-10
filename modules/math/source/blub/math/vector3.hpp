@@ -1,14 +1,18 @@
-#ifndef VECTOR3_HPP
-#define VECTOR3_HPP
+#ifndef BLUB_MATH_VECTOR3_HPP
+#define BLUB_MATH_VECTOR3_HPP
 
 #include "blub/core/classVersion.hpp"
 #include "blub/core/globals.hpp"
 #include "blub/math/math.hpp"
 #include "blub/serialization/access.hpp"
 #include "blub/serialization/nameValuePair.hpp"
+#ifdef BLUB_USE_PHYSX
+#   include <foundation/PxVec3.h>
+#endif
 
-
+#ifdef BLUB_USE_BULLET
 class btVector3;
+#endif
 namespace Ogre
 {
     class Vector3;
@@ -31,6 +35,13 @@ public:
 #ifndef BLUB_NO_OGRE3D
     vector3(const Ogre::Vector3 &vec);
     operator Ogre::Vector3() const;
+#endif
+#ifdef BLUB_USE_PHYSX
+    vector3(const physx::PxVec3& other)
+        : x(other.x), y(other.y), z(other.z)
+    {}
+    operator physx::PxVec3() const
+    {return physx::PxVec3(x,y,z);}
 #endif
 #ifndef BLUB_NO_BULLET
     vector3(const btVector3 &vec);
@@ -678,10 +689,11 @@ private:
 
 
 std::ostream& operator<< (std::ostream& ostr, const vector3& toCast);
+std::size_t hash_value(const vector3& value);
 
 
 }
 BLUB_CLASSVERSION(blub::vector3, 1)
 
 
-#endif // VECTOR3_HPP
+#endif // BLUB_MATH_VECTOR3_HPP

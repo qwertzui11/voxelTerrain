@@ -1,23 +1,14 @@
-message("doing core")
 
 set(sources
-base64.cpp
 byteArray.cpp
-compression.cpp
 dateTime.cpp
-deque.cpp
 idCreator.cpp
-log.cpp
 string.cpp
 timer.cpp
-PARENT_SCOPE
 )
 
 set(headers
 predecl.hpp
-any.hpp
-base64.hpp
-compression.hpp
 pair.hpp
 hashMapMulti.hpp
 string.hpp
@@ -28,14 +19,12 @@ weakPointer.hpp
 array.hpp
 sharedPointer.hpp
 hashList.hpp
-geometry.hpp
 hashMap.hpp
 idCreator.hpp
 map.hpp
 timer.hpp
 byteArray.hpp
 classVersion.hpp
-log.hpp
 noncopyable.hpp
 scopedPtr.hpp
 signal.hpp
@@ -43,5 +32,7 @@ vector.hpp
 stringList.hpp
 state.hpp
 list.hpp
-PARENT_SCOPE
 )
+
+add_module(core)
+

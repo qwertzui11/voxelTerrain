@@ -7,7 +7,7 @@
 #include "blub/core/sharedPointer.hpp"
 #include "blub/math/axisAlignedBox.hpp"
 #include "blub/math/vector3.hpp"
-#include "blub/math/vector3uint8.hpp"
+#include "blub/math/vector3int.hpp"
 #include "blub/procedural/voxel/tile/renderer.hpp"
 #include "blub/procedural/voxel/tile/surface.hpp"
 #include "blub/procedural/voxel/data.hpp"
@@ -143,9 +143,9 @@ OgreTile<voxelType>::OgreTile(Ogre::SceneManager *sc,
 
 
 template <typename voxelType>
-typename OgreTile<voxelType>::t_base::pointer OgreTile<voxelType>::create(Ogre::SceneManager *sc,
-                                           Ogre::String materialName,
-                                           blub::async::dispatcher *graphicDispatcher)
+typename blub::procedural::voxel::tile::renderer<voxelType>::pointer OgreTile<voxelType>::create(Ogre::SceneManager *sc,
+																								 Ogre::String materialName,
+																								 blub::async::dispatcher *graphicDispatcher)
 {
     BASSERT(graphicDispatcher != nullptr);
     typename t_base::pointer result(new OgreTile(sc, materialName, *graphicDispatcher));

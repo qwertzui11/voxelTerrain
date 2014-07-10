@@ -1,4 +1,3 @@
-message("doing core")
 
 set(sources
 log/global.cpp
@@ -14,26 +13,21 @@ sphere.cpp
 transform.cpp
 triangleVector3.cpp
 vector2.cpp
-vector2int32.cpp
 vector3.cpp
-vector3int32.cpp
-PARENT_SCOPE
 )
 
 set(headers
 log/global.hpp
 predecl.hpp
 rectangle.hpp
-vector3Template.hpp
 triangleVector3.hpp
 colour.hpp
 octree/search.hpp
 octree/container.hpp
 triangle.hpp
 vector3.hpp
-vector2Template.hpp
+vector2int.hpp
 transform.hpp
-vector2int32.hpp
 axisAlignedBox.hpp
 sphere.hpp
 ray.hpp
@@ -41,11 +35,11 @@ intersection.hpp
 vector3int32map.hpp
 axisAlignedBoxTemplate.hpp
 axisAlignedBoxInt32.hpp
-vector3int32.hpp
-vector3uint8.hpp
 math.hpp
 quaternion.hpp
 vector2.hpp
 plane.hpp
-PARENT_SCOPE
 )
+
+set (modules_to_link core log)
+add_module(math)

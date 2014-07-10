@@ -8,7 +8,7 @@
 #include "blub/math/axisAlignedBox.hpp"
 #include "blub/math/plane.hpp"
 #include "blub/math/transform.hpp"
-#include "blub/math/vector3int32.hpp"
+#include "blub/math/vector3int.hpp"
 #include "blub/procedural/predecl.hpp"
 #include "blub/procedural/voxel/simple/container/base.hpp"
 #include "blub/procedural/voxel/tile/container.hpp"
@@ -69,6 +69,12 @@ public:
                                 const vector3int32& voxelContainerOffset,
                                 const transform &trans) const
     {
+#ifdef BLUB_LOG_VOXEL
+        BLUB_PROCEDURAL_LOG_OUT() << "calculateVoxel trans:" << trans;
+#endif
+
+        const blub::axisAlignedBox aabb(getAxisAlignedBoundingBox(trans));
+
         const vector3int32 posContainerAbsolut(voxelContainerOffset*t_voxelContainerTile::voxelLength);
         for (int32 indX = 0; indX < t_voxelContainerTile::voxelLength; ++indX)
         {
@@ -78,6 +84,11 @@ public:
                 {
                     const vector3int32 posVoxel(indX, indY, indZ);
                     vector3 posAbsolut(posContainerAbsolut + posVoxel);
+
+                    if (!aabb.contains(posAbsolut))
+                    {
+                        continue;
+                    }
 
                     posAbsolut -= trans.position;
                     posAbsolut /= trans.scale;

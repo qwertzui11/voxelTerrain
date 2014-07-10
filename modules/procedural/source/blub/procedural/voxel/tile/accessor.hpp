@@ -3,8 +3,9 @@
 
 #include "blub/core/array.hpp"
 #include "blub/core/globals.hpp"
-#include "blub/math/vector2int32.hpp"
-#include "blub/math/vector3int32.hpp"
+#include "blub/core/scopedPtr.hpp"
+#include "blub/math/vector2int.hpp"
+#include "blub/math/vector3int.hpp"
 #include "blub/procedural/voxel/tile/container.hpp"
 #include "blub/serialization/access.hpp"
 #include "blub/serialization/nameValuePair.hpp"
@@ -32,6 +33,16 @@ public:
     typedef base<accessor<voxelType> > t_base;
     typedef tile::container<voxelType> t_voxelContainer;
 
+#if defined(BOOST_NO_CXX11_CONSTEXPR)
+    static const int32 voxelLength;
+    static const int32 voxelLengthWithNormalCorrection;
+    static const int32 voxelLengthLod;
+    static const int32 voxelCount;
+    static const int32 voxelCountLod;
+    static const int32 voxelCountLodAll;
+    static const int32 voxelLengthSurface;
+    static const int32 voxelCountSurface;
+#else
     static constexpr int32 voxelLength = t_voxelContainer::voxelLength;
     static constexpr int32 voxelLengthWithNormalCorrection = voxelLength+3;
     static constexpr int32 voxelLengthLod = (voxelLength+1)*2;
@@ -40,10 +51,10 @@ public:
     static constexpr int32 voxelCountLodAll = 6*voxelCountLod;
     static constexpr int32 voxelLengthSurface = t_voxelContainer::voxelLength+1;
     static constexpr int32 voxelCountSurface = voxelLengthSurface*voxelLengthSurface*voxelLengthSurface;
+#endif
 
-    typedef array<voxelType, voxelCount> t_voxelArray;
-    typedef array<voxelType, 6*voxelCountLod> t_voxelArrayLod;
-
+    typedef vector<voxelType> t_voxelArray;
+    typedef vector<voxelType> t_voxelArrayLod;
 
     /**
      * @brief create creates an instance.
@@ -61,8 +72,7 @@ public:
     {
         if (m_calculateLod)
         {
-            delete m_voxelsLod;
-            m_voxelsLod = nullptr;
+            m_voxelsLod.reset();
         }
     }
 
@@ -206,16 +216,16 @@ public:
      */
     t_voxelArrayLod* getVoxelArrayLod() const
     {
-        return m_voxelsLod;
+        return m_voxelsLod.get();
     }
     /**
      * @brief getVoxelArrayLod returns nullptr if no lod shall get calculated else 6-lod-arrays of voxels.
      * @return returns
      * @see getCalculateLod()
      */
-    t_voxelArrayLod* getVoxelArrayLod()
+    t_voxelArrayLod* getVoxelArrayLod() // TODO remove me?
     {
-        return m_voxelsLod;
+        return m_voxelsLod.get();
     }
 
     /**
@@ -234,12 +244,11 @@ public:
         if (m_calculateLod)
         {
             BASSERT(m_voxelsLod == nullptr);
-            m_voxelsLod = new t_voxelArrayLod(); // [6*voxelCountLod]
+            m_voxelsLod.reset(new t_voxelArrayLod(6*voxelCountLod)); // [6*voxelCountLod]
         }
         else
         {
-            delete m_voxelsLod;
-            m_voxelsLod = nullptr;
+            m_voxelsLod.reset();
         }
     }
 
@@ -265,7 +274,8 @@ protected:
      * @brief accessor constructor
      */
     accessor()
-        : m_voxelsLod(nullptr)
+        : m_voxels(voxelCount)
+        , m_voxelsLod(nullptr)
         , m_calculateLod(false)
         , m_numVoxelLargerZero(0)
         , m_numVoxelLargerZeroLod(0)
@@ -280,7 +290,7 @@ protected:
         BASSERT(index >= 0);
         BASSERT(index < voxelCountLod);
         BASSERT(m_calculateLod);
-        BASSERT(m_voxelsLod != nullptr);
+        BASSERT(!m_voxelsLod.isNull());
 
         if (toSet.getInterpolation() >= 0)
         {
@@ -360,11 +370,11 @@ private:
 
         if (m_calculateLod)
         {
-            if (m_voxelsLod == nullptr)
+            if (m_voxelsLod.isNull())
             {
                 setCalculateLod(m_calculateLod);
             }
-            BASSERT(m_voxelsLod != nullptr);
+            BASSERT(!m_voxelsLod.isNull());
             readWrite & nameValuePair::create("voxelsLod", *m_voxelsLod);
         }
     }
@@ -373,7 +383,7 @@ private:
 
 private:
     t_voxelArray m_voxels;
-    t_voxelArrayLod *m_voxelsLod;
+    blub::scopedPointer<t_voxelArrayLod> m_voxelsLod;
 
     bool m_calculateLod;
     int32 m_numVoxelLargerZero;
@@ -383,22 +393,25 @@ private:
 };
 
 
-template <class voxelType>
-constexpr int32 accessor<voxelType>::voxelLength;
-template <class voxelType>
-constexpr int32 accessor<voxelType>::voxelLengthWithNormalCorrection;
-template <class voxelType>
-constexpr int32 accessor<voxelType>::voxelLengthLod;
-template <class voxelType>
-constexpr int32 accessor<voxelType>::voxelCount;
-template <class voxelType>
-constexpr int32 accessor<voxelType>::voxelCountLod;
-template <class voxelType>
-constexpr int32 accessor<voxelType>::voxelCountLodAll;
-template <class voxelType>
-constexpr int32 accessor<voxelType>::voxelLengthSurface;
-template <class voxelType>
-constexpr int32 accessor<voxelType>::voxelCountSurface;
+#if defined(BOOST_NO_CXX11_CONSTEXPR)
+template <class voxelType> const int32 accessor<voxelType>::voxelLength = t_voxelContainer::voxelLength;
+template <class voxelType> const int32 accessor<voxelType>::voxelLengthWithNormalCorrection = voxelLength+3;
+template <class voxelType> const int32 accessor<voxelType>::voxelLengthLod = (voxelLength+1)*2;
+template <class voxelType> const int32 accessor<voxelType>::voxelCount = voxelLengthWithNormalCorrection*voxelLengthWithNormalCorrection*voxelLengthWithNormalCorrection;
+template <class voxelType> const int32 accessor<voxelType>::voxelCountLod = voxelLengthLod*voxelLengthLod;
+template <class voxelType> const int32 accessor<voxelType>::voxelCountLodAll = 6*voxelCountLod;
+template <class voxelType> const int32 accessor<voxelType>::voxelLengthSurface = t_voxelContainer::voxelLength+1;
+template <class voxelType> const int32 accessor<voxelType>::voxelCountSurface = voxelLengthSurface*voxelLengthSurface*voxelLengthSurface;
+#else
+template <class voxelType> constexpr int32 accessor<voxelType>::voxelLength;
+template <class voxelType> constexpr int32 accessor<voxelType>::voxelLengthWithNormalCorrection;
+template <class voxelType> constexpr int32 accessor<voxelType>::voxelLengthLod;
+template <class voxelType> constexpr int32 accessor<voxelType>::voxelCount;
+template <class voxelType> constexpr int32 accessor<voxelType>::voxelCountLod;
+template <class voxelType> constexpr int32 accessor<voxelType>::voxelCountLodAll;
+template <class voxelType> constexpr int32 accessor<voxelType>::voxelLengthSurface;
+template <class voxelType> constexpr int32 accessor<voxelType>::voxelCountSurface;
+#endif
 
 
 }

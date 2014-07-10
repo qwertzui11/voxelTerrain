@@ -4,7 +4,7 @@
 #include "blub/core/array.hpp"
 #include "blub/core/classVersion.hpp"
 #include "blub/math/axisAlignedBoxInt32.hpp"
-#include "blub/math/vector3int32.hpp"
+#include "blub/math/vector3int.hpp"
 #include "blub/procedural/voxel/tile/base.hpp"
 #include "blub/serialization/access.hpp"
 #include "blub/serialization/nameValuePair.hpp"
@@ -32,10 +32,15 @@ public:
     typedef base<container<voxelType> > t_base;
     typedef voxelType t_data;
 
+#if defined(BOOST_NO_CXX11_CONSTEXPR)
+    static const int32 voxelLength;
+    static const int32 voxelCount;
+#else
     static constexpr int32 voxelLength = 24;
     static constexpr int32 voxelCount = voxelLength*voxelLength*voxelLength;
-
-    typedef array<t_data, voxelCount> t_voxelArray;
+#endif
+ 
+    typedef vector<t_data> t_voxelArray;
 
     /**
      * @brief create creates an instance.
@@ -276,7 +281,8 @@ protected:
      * @brief container constructor
      */
     container()
-        : m_countVoxelInterpolationLargerZero(0)
+        : m_voxels(voxelCount)
+        , m_countVoxelInterpolationLargerZero(0)
         , m_countVoxelMinimum(voxelCount)
         , m_countVoxelMaximum(0)
         , m_editing(false)
@@ -421,8 +427,18 @@ private:
 
 };
 
+
+#if defined(BOOST_NO_CXX11_CONSTEXPR)
+template <class voxelType>
+const int32 container<voxelType>::voxelLength = 24;
+template <class voxelType>
+const int32 container<voxelType>::voxelCount = voxelLength*voxelLength*voxelLength;
+#else
 template <class voxelType>
 constexpr int32 container<voxelType>::voxelLength;
+template <class voxelType>
+constexpr int32 container<voxelType>::voxelCount;
+#endif
 
 
 }

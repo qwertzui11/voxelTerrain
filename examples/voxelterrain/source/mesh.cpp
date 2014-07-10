@@ -67,7 +67,7 @@ int main(int /*argc*/, char* /*argv*/[])
 
     t_cameraIdentifier cameraIdentifier;
     {       
-        const int32 numLod(1); // no lod for mesh to voxel presentation
+        const int32 numLod(3); // no lod for mesh to voxel presentation
 
         // voxel themself
         voxelContainer.reset(new t_voxelContainer(terrainDispatcher));
@@ -83,7 +83,9 @@ int main(int /*argc*/, char* /*argv*/[])
 
         // renderer
         t_voxelRenderer::t_syncRadiusList lodRadien(numLod);
-        lodRadien[0] = voxel::tile::container<t_voxel>::voxelLength*10.0;
+        lodRadien[0] = voxel::tile::container<t_voxel>::voxelLength*2.0;
+        lodRadien[1] = voxel::tile::container<t_voxel>::voxelLength*4.0;
+        lodRadien[2] = voxel::tile::container<t_voxel>::voxelLength*6.0;
         voxelRenderer.reset(new t_voxelRenderer(terrainDispatcher, *voxelSurface, lodRadien));
         voxelRenderer->setCreateTileCallback(callbackCreate);
         cameraIdentifier = sync::identifier::create();
@@ -107,8 +109,8 @@ int main(int /*argc*/, char* /*argv*/[])
     // create voxel
     {
         voxel::edit::mesh<t_voxel>::pointer mesh(voxel::edit::mesh<t_voxel>::create());
-        mesh->load("torrus.dae");
-        voxelContainer->editVoxel(mesh, transform(vector3(), quaternion(), 10.0));
+        mesh->load("/home/mlanner/Desktop/test.dae", transform(vector3(), quaternion(), 10.0));
+        voxelContainer->editVoxel(mesh);
     }
 
 

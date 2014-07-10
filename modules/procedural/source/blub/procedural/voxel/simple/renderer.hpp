@@ -14,7 +14,7 @@
 #include "blub/sync/predecl.hpp"
 #include "blub/sync/sender.hpp"
 
-#include <boost/function/function0.hpp>
+#include <functional>
 
 
 namespace blub
@@ -54,7 +54,7 @@ public:
     typedef tile::surface<voxelType> t_tileSurface;
     typedef sharedPointer<t_tileSurface> t_tileDataPtr;
 
-    typedef boost::function<bool (vector3, axisAlignedBox)> t_octreeSearchCallback;
+    typedef std::function<bool (vector3, axisAlignedBox)> t_octreeSearchCallback;
 
     typedef base<t_tileDataPtr> t_rendererSurface;
 
@@ -294,18 +294,18 @@ protected:
         const int32 sizeLeaf(t_tileContainer::voxelLength);
         const vector3int32 posAbs(id*sizeLeaf);
         const axisAlignedBoxInt32 octreeNode(posAbs, posAbs+vector3int32(sizeLeaf));
-        const vector3int32 toIterate[] = {{-1, 0, 0},
-                                          {1, 0, 0},
-                                          {0, -1, 0},
-                                          {0, 1, 0},
-                                          {0, 0, -1},
-                                          {0, 0, 1}
+        const vector3int32 toIterate[] = {vector3int32(-1, 0, 0),
+                                          vector3int32(1, 0, 0),
+                                          vector3int32(0, -1, 0),
+                                          vector3int32(0, 1, 0),
+                                          vector3int32(0, 0, -1),
+                                          vector3int32(0, 0, 1)
                                          };
         const int32 toSetOnNeighbour[] = {1, 0, 3, 2, 5, 4};
         const int32 tileWork(isInRange(m_cameraPositionInTreeLeaf, axisAlignedBox(octreeNode)));
         if ((tileWork == 0) != toUpdate->getVisible())
         {
-            blub::BWARNING("(tileWork == 0) != toUpdate->getVisible() id:" + blub::string::number(id)); // may occur, when server deletes tile message, arrives before up-to-date camera position.
+            BLUB_PROCEDURAL_LOG_WARNING() << "(tileWork == 0) != toUpdate->getVisible() id:" << id; // may occur, when server deletes tile message, arrives before up-to-date camera position.
         }
         for (int32 lod = 0; lod < 6; ++lod)
         {

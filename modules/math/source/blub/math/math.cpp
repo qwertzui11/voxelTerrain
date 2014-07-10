@@ -3,8 +3,17 @@
 
 using namespace blub;
 
+#if defined(BOOST_NO_CXX11_CONSTEXPR)
+const real math::pi = 3.14159265358979323846;
+const real math::piHalf = math::pi / 2.;
+const real math::sqrtZeroPointFive = 0.707106781;
+const real math::sqrtOneThird = 0.577350269;
+#else
 constexpr real math::pi;
 constexpr real math::piHalf;
+constexpr real math::sqrtZeroPointFive;
+constexpr real math::sqrtOneThird;
+#endif
 
 
 real math::abs(const real &calc)
@@ -59,7 +68,3 @@ real math::pow(const real &number, const real &expo)
     return std::pow(number, expo);
 }
 
-bool math::between(const real &number, const real &min, const real &max)
-{
-    return (number > min) && (number < max);
-}

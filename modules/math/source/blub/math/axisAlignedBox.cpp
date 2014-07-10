@@ -2,7 +2,7 @@
 
 #include "blub/math/axisAlignedBoxInt32.hpp"
 #include "blub/math/vector3.hpp"
-#include "blub/math/vector3int32.hpp"
+#include "blub/math/vector3int.hpp"
 
 #include <limits>
 

@@ -4,9 +4,9 @@
 #include "blub/core/array.hpp"
 #include "blub/core/sharedPointer.hpp"
 #include "blub/core/vector.hpp"
-#include "blub/math/vector2int32.hpp"
+#include "blub/math/vector2int.hpp"
 #include "blub/math/vector3.hpp"
-#include "blub/math/vector3int32.hpp"
+#include "blub/math/vector3int.hpp"
 #include "blub/procedural/voxel/tile/base.hpp"
 #include "blub/procedural/voxel/tile/internal/transvoxelTables.hpp"
 
@@ -130,14 +130,14 @@ public:
                     const vector3int32 posVoxel(x, y, z);
                     t_calcVoxel voxelCalc;
                     const vector3int32 toCheck[] = {
-                        {0, 0, 0},
-                        {1, 0, 0},
-                        {0, 0, 1},
-                        {1, 0, 1},
-                        {0, 1, 0},
-                        {1, 1, 0},
-                        {0, 1, 1},
-                        {1, 1, 1}
+                        vector3int32(0, 0, 0),
+                        vector3int32(1, 0, 0),
+                        vector3int32(0, 0, 1),
+                        vector3int32(1, 0, 1),
+                        vector3int32(0, 1, 0),
+                        vector3int32(1, 1, 0),
+                        vector3int32(0, 1, 1),
+                        vector3int32(1, 1, 1)
                     };
                     uint16 toAddToTableIndex(1);
                     for (uint16 indCheck = 0; indCheck < 8; ++indCheck)
@@ -223,28 +223,29 @@ public:
         // transvoxel
         if (m_lod > 0)// && false)
         {
+			typedef vector3int32 v3i;
             const vector3int32 voxelLookups[][9] = {
-                {{0, 0, 0},{0, 1, 0},{0, 2, 0},{0, 2, 1},{0, 2, 2},{0, 1, 2},{0, 0, 2},{0, 0, 1},{0, 1, 1}},
-                {{0, 0, 0},{1, 0, 0},{2, 0, 0},{2, 0, 1},{2, 0, 2},{1, 0, 2},{0, 0, 2},{0, 0, 1},{1, 0, 1}},
-                {{0, 0, 0},{1, 0, 0},{2, 0, 0},{2, 1, 0},{2, 2, 0},{1, 2, 0},{0, 2, 0},{0, 1, 0},{1, 1, 0}},
+                {v3i(0, 0, 0),v3i(0, 1, 0),v3i(0, 2, 0),v3i(0, 2, 1),v3i(0, 2, 2),v3i(0, 1, 2),v3i(0, 0, 2),v3i(0, 0, 1),v3i(0, 1, 1)},
+                {v3i(0, 0, 0),v3i(1, 0, 0),v3i(2, 0, 0),v3i(2, 0, 1),v3i(2, 0, 2),v3i(1, 0, 2),v3i(0, 0, 2),v3i(0, 0, 1),v3i(1, 0, 1)},
+                {v3i(0, 0, 0),v3i(1, 0, 0),v3i(2, 0, 0),v3i(2, 1, 0),v3i(2, 2, 0),v3i(1, 2, 0),v3i(0, 2, 0),v3i(0, 1, 0),v3i(1, 1, 0)},
                 };
             const int32 voxelLengthLodStart(t_voxelAccessor::voxelLengthLod-2);
             const int32 voxelLengthLodEnd(t_voxelAccessor::voxelLengthLod-1);
             const vector3int32 toIterate[][2] = {
-                {{0, 0, 0},                     {1, voxelLengthLodStart, voxelLengthLodStart}},
-                {{voxelLengthLodStart, 0, 0},   {voxelLengthLodEnd, voxelLengthLodStart, voxelLengthLodStart}},
-                {{0, 0, 0},                     {voxelLengthLodStart, 1, voxelLengthLodStart}},
-                {{0, voxelLengthLodStart, 0},   {voxelLengthLodStart, voxelLengthLodEnd, voxelLengthLodStart}},
-                {{0, 0, 0},                     {voxelLengthLodStart, voxelLengthLodStart, 1}},
-                {{0, 0, voxelLengthLodStart},   {voxelLengthLodStart, voxelLengthLodStart, voxelLengthLodEnd}}
+                {v3i(0, 0, 0),                     v3i(1, voxelLengthLodStart, voxelLengthLodStart)},
+                {v3i(voxelLengthLodStart, 0, 0),   v3i(voxelLengthLodEnd, voxelLengthLodStart, voxelLengthLodStart)},
+                {v3i(0, 0, 0),                     v3i(voxelLengthLodStart, 1, voxelLengthLodStart)},
+                {v3i(0, voxelLengthLodStart, 0),   v3i(voxelLengthLodStart, voxelLengthLodEnd, voxelLengthLodStart)},
+                {v3i(0, 0, 0),                     v3i(voxelLengthLodStart, voxelLengthLodStart, 1)},
+                {v3i(0, 0, voxelLengthLodStart),   v3i(voxelLengthLodStart, voxelLengthLodStart, voxelLengthLodEnd)}
                 };
             const vector3int32 reuseCorrection[] = {
-                {1, 0, 0},
-                {1, 0, 0},
-                {0, 1, 0},
-                {0, 1, 0},
-                {0, 0, 1},
-                {0, 0, 1}
+                v3i(1, 0, 0),
+                v3i(1, 0, 0),
+                v3i(0, 1, 0),
+                v3i(0, 1, 0),
+                v3i(0, 0, 1),
+                v3i(0, 0, 1)
                 };
 
             const bool toInvertTriangles[] = {
@@ -263,11 +264,7 @@ public:
                 // the indexer for the vertices. *3 because gets saved with edge-id
                 const int32 vertexIndicesReuseLodSize(((t_voxelAccessor::voxelLength+1)*4)*
                                                       ((t_voxelAccessor::voxelLength+1)*4));
-                int32 vertexIndicesReuseLod[vertexIndicesReuseLodSize];
-                for (int32 index = 0; index < vertexIndicesReuseLodSize; ++index)
-                {
-                    vertexIndicesReuseLod[index] = -1;
-                }
+                vector<int32> vertexIndicesReuseLod(vertexIndicesReuseLodSize, -1);
 
                 for (uint32 x = start.x; x < (unsigned)end.x; x+=2)
                 {

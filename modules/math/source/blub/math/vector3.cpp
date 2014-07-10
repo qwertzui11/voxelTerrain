@@ -2,8 +2,9 @@
 
 #include "blub/math/math.hpp"
 #include "blub/math/quaternion.hpp"
-#include "blub/math/vector3int32.hpp"
+#include "blub/math/vector3int.hpp"
 
+#include <boost/functional/hash.hpp>
 #ifndef BLUB_NO_BULLET
 #   include <bullet/LinearMath/btVector3.h>
 #endif
@@ -43,7 +44,6 @@ vector3::vector3(const vector3int32 &cast)
         return Ogre::Vector3(x, y, z);
     }
 #endif
-
 #ifndef BLUB_NO_BULLET
     vector3::vector3(const btVector3 &vec)
         : x(vec.getX())
@@ -120,4 +120,13 @@ quaternion vector3::getRotationTo(const vector3 &dest, const vector3 &fallbackAx
 std::ostream &blub::operator<< (std::ostream &ostr, const vector3 &toCast)
 {
     return ostr << "(" << toCast.x << "," << toCast.y << "," << toCast.z << ")";
+}
+
+std::size_t blub::hash_value(const vector3 &value)
+{
+    std::size_t result(value.x);
+    boost::hash_combine(result, value.y);
+    boost::hash_combine(result, value.z);
+
+    return result;
 }

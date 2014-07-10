@@ -107,8 +107,8 @@ public:
 
         pl.insert(std::make_pair(std::string("WINDOW"), boost::lexical_cast<std::string>(windowHandle)));
     #if defined OIS_WIN32_PLATFORM
-        pl.insert(std::make_pair(std::string("w32_mouse"), std::string("DISCL_BACKGROUND" )));
-        pl.insert(std::make_pair(std::string("w32_mouse"), std::string("DISCL_EXCLUSIVE")));
+        //pl.insert(std::make_pair(std::string("w32_mouse"), std::string("DISCL_BACKGROUND" )));
+        //pl.insert(std::make_pair(std::string("w32_mouse"), std::string("DISCL_EXCLUSIVE")));
         pl.insert(std::make_pair(std::string("w32_keyboard"), std::string("DISCL_FOREGROUND")));
         pl.insert(std::make_pair(std::string("w32_keyboard"), std::string("DISCL_NONEXCLUSIVE")));
     #elif defined OIS_LINUX_PLATFORM
@@ -187,7 +187,7 @@ public:
         m_lookHor += static_cast<blub::real>(arg.state.Y.rel) / -500.;
         m_lookVert += static_cast<blub::real>(arg.state.X.rel) / -500.;
 
-        m_lookHor = blub::math::clamp<blub::real>(m_lookHor, -M_PI_2, M_PI_2);
+		m_lookHor = blub::math::clamp<blub::real>(m_lookHor, -blub::math::piHalf, blub::math::piHalf);
 
         const blub::quaternion rotVert(0, blub::math::sin(m_lookVert / 2.0), 0, blub::math::cos(m_lookVert / 2.0));
         const blub::quaternion rotHor(blub::math::sin(m_lookHor / 2.0), 0, 0, blub::math::cos(m_lookHor / 2.0));

@@ -1,7 +1,7 @@
 #ifndef BLUB_PROCEDURAL_VOXEL_TILE_RENDERER_HPP
 #define BLUB_PROCEDURAL_VOXEL_TILE_RENDERER_HPP
 
-#include "blub/math/vector3int32.hpp"
+#include "blub/math/vector3int.hpp"
 #include "blub/procedural/voxel/tile/base.hpp"
 
 

@@ -7,7 +7,7 @@
 #include "blub/core/sharedPointer.hpp"
 #include "blub/math/axisAlignedBoxInt32.hpp"
 #include "blub/math/vector3.hpp"
-#include "blub/math/vector3int32.hpp"
+#include "blub/math/vector3int.hpp"
 
 
 namespace blub

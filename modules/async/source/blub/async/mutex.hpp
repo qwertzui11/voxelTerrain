@@ -1,7 +1,7 @@
-#ifndef MUTEX_HPP
-#define MUTEX_HPP
+#ifndef BLUB_ASYNC_MUTEX_HPP
+#define BLUB_ASYNC_MUTEX_HPP
 
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 
 namespace blub
@@ -10,19 +10,11 @@ namespace async
 {
 
 
-class mutex : public boost::mutex
+class mutex : public std::mutex
 {
 public:
     mutex()
     {
-    }
-    void lock()
-    {
-        boost::mutex::lock();
-    }
-    void unlock()
-    {
-        boost::mutex::unlock();
     }
     bool tryLock()
     {
@@ -34,4 +26,4 @@ public:
 }
 }
 
-#endif // MUTEX_HPP
+#endif // BLUB_ASYNC_MUTEX_HPP

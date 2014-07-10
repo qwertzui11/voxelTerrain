@@ -2,9 +2,10 @@
 
 #include "blub/async/mutex.hpp"
 
+#include <boost/asio/io_service.hpp>
 #include <boost/thread.hpp>
 #ifdef BLUB_LINUX
-#include <sys/prctl.h>
+#	include <sys/prctl.h>
 #endif
 
 
@@ -18,7 +19,7 @@ dispatcher::dispatcher(const uint16 &numThreads, const bool &endThreadsAfterAllD
     , m_numThreads(numThreads)
     , m_endThreadsAfterAllDone(endThreadsAfterAllDone)
 {
-    ;
+    m_service.reset(new boost::asio::io_service());
 }
 
 
@@ -39,7 +40,7 @@ void dispatcher::start()
 {
     if (!m_endThreadsAfterAllDone)
     {
-        m_work = new boost::asio::io_service::work(m_service);
+        m_work = new boost::asio::io_service::work(*m_service.get());
     }
     for (uint16 ind = 0; ind < m_numThreads; ++ind)
     {
@@ -50,31 +51,41 @@ void dispatcher::start()
     if (m_numThreads == 0)
     {
         run();
-        m_service.reset();
+        m_service->reset();
     }
 }
 
 void dispatcher::run()
 {
-    m_service.run();
+    m_service->run();
 }
 
 void dispatcher::reset()
 {
-    m_service.reset();
+    m_service->reset();
 }
 
 void dispatcher::stop()
 {
     if (m_work != nullptr)
     {
-        delete m_work;
+        delete static_cast<boost::asio::io_service::work*>(m_work);
         m_work = nullptr;
     }
     // m_toDo.stop();
     join();
 
     m_threads.clear();
+}
+
+void dispatcher::dispatch(const dispatcher::t_toCallFunction &handler)
+{
+    m_service->dispatch(handler);
+}
+
+void dispatcher::post(const dispatcher::t_toCallFunction &handler)
+{
+    m_service->post(handler);
 }
 
 void dispatcher::waitForQueueDone()
@@ -92,7 +103,7 @@ int32 dispatcher::getThreadCount()
 
 boost::asio::io_service *dispatcher::_getIoService()
 {
-    return &m_service;
+    return m_service.get();
 }
 
 void dispatcher::runThread(const int32& indThread)

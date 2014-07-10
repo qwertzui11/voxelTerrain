@@ -15,6 +15,7 @@ namespace Ogre
 namespace blub
 {
 
+
 class vector2
 {
 public:
@@ -258,6 +259,11 @@ protected:
     }
 
 };
+
+
+std::ostream& operator<< (std::ostream& ostr, const vector2& toCast);
+std::size_t hash_value(const vector2& value);
+
 
 }
 

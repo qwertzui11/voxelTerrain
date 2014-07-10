@@ -1,15 +1,15 @@
 #ifndef IDCREATOR_HPP
 #define IDCREATOR_HPP
 
-#include "blub/async/mutex.hpp"
-#include "blub/async/mutexLocker.hpp"
+//#include "blub/async/mutex.hpp"
+//#include "blub/async/mutexLocker.hpp"
 
 namespace blub
 {
 
 /** creates ids */
 template <typename idType>
-class idCreator : public async::mutex
+class idCreator// : public async::mutex
 {
 public:
 
@@ -24,14 +24,15 @@ public:
     }
 
     /** returns threadsafe a new id, call createId if class only gets called by one thread */
-    idType createIdThreadSafe(void)
-    {
-        async::mutexLocker locker(*this); (void)locker;
-        return createId();
-    }
+    //idType createIdThreadSafe(void)
+    //{
+    //    async::mutexLocker locker(*this); (void)locker;
+    //    return createId();
+    //}
 
 private:
     idType m_idCounter;
+
 };
 
 

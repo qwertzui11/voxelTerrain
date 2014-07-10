@@ -8,7 +8,8 @@
 #include "blub/core/signal.hpp"
 #include "blub/async/dispatcher.hpp"
 #include "blub/async/seperate.hpp"
-#include "blub/math/vector3int32.hpp"
+#include "blub/math/vector3int.hpp"
+#include "blub/procedural/log/global.hpp"
 #include "blub/procedural/predecl.hpp"
 
 #include <boost/function/function0.hpp>
@@ -144,8 +145,8 @@ protected:
      */
     blub::async::dispatcher &m_worker;
 
-private:
     t_tilesGotChangedMap m_tilesThatGotEdited;
+private:
 
     t_createTileCallback m_createTileCallback;
 
@@ -198,20 +199,20 @@ const typename base<dataType>::t_tilesGotChangedMap &base<dataType>::getTilesTha
 }
 
 template <class dataType>
-void base<dataType>::setCreateTileCallback(const base::t_createTileCallback &callback)
+void base<dataType>::setCreateTileCallback(const t_createTileCallback &callback)
 {
     m_createTileCallback = callback;
 }
 
 template <class dataType>
-void base<dataType>::addToChangeList(const base::t_tileId &id, base::t_data toAdd)
+void base<dataType>::addToChangeList(const t_tileId &id, t_data toAdd)
 {
     BASSERT(!m_classLocker.tryLockForWrite());
     m_tilesThatGotEdited.insert(id, toAdd);
 }
 
 template <class dataType>
-bool base<dataType>::base::tryLockForEditMaster()
+bool base<dataType>::tryLockForEditMaster()
 {
     return m_classLocker.tryLockForWrite();
     /*const bool result(t_base::tryLockForWrite()); // TODO: compiler (gcc-4.7.2) crashes - wait for new version and fix
@@ -234,6 +235,9 @@ template <class dataType>
 void base<dataType>::unlockForEditMaster()
 {
     m_classLocker.unlock();
+#ifdef BLUB_LOG_VOXEL
+    BLUB_PROCEDURAL_LOG_OUT() << "simple master unlock m_tilesThatGotEdited.size():" << m_tilesThatGotEdited.size();
+#endif
     if (!m_tilesThatGotEdited.empty())
     {
         m_sigEditDone();

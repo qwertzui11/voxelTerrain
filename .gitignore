@@ -1,3 +1,7 @@
 CMakeLists.txt.user
-build/
+docs/gen/
+*.kdev4*
+*.tmp
+*.cfg
+*.dat
 

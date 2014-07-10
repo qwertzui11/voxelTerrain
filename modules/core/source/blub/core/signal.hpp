@@ -1,5 +1,5 @@
-#ifndef SIGNAL_HPP
-#define SIGNAL_HPP
+#ifndef BLUB_CORE_SIGNAL_HPP
+#define BLUB_CORE_SIGNAL_HPP
 
 #include "blub/core/globals.hpp"
 
@@ -35,4 +35,4 @@ public:
 }
 
 
-#endif // SIGNAL_HPP
+#endif // BLUB_CORE_SIGNAL_HPP

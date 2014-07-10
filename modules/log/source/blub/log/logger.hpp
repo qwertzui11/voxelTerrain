@@ -28,7 +28,7 @@ namespace log
         typedef boost::log::sources::severity_logger_mt<blub::log::severity> t_base;
 
         logger(const blub::string &moduleName);
-
+		~logger() {;}
     };
 }
 }

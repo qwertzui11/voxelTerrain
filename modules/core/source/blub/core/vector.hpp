@@ -14,6 +14,7 @@
 namespace blub
 {
 
+
     template <typename T>
     class vector : public std::vector<T>
     {
@@ -25,10 +26,16 @@ namespace blub
             : t_base(size)
         {
         }
+        vector(const std::size_t& size, const T& value)
+            : t_base(size, value)
+        {
+        }
+#if !defined BOOST_NO_CXX11_HDR_INITIALIZER_LIST
         vector(const std::initializer_list<T> &list)
             : t_base(list)
         {
         }
+#endif
     protected:
         BLUB_SERIALIZATION_ACCESS
         template<typename Archive>

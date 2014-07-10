@@ -56,7 +56,7 @@ public:
 
     vector3 getNormal() const
     {
-        return (positions[1]-positions[0]).crossProduct(positions[2]-positions[0]).normalisedCopy();
+        return ((positions[1]-positions[0]).normalisedCopy()).crossProduct((positions[2]-positions[0]).normalisedCopy());
     }
 
     axisAlignedBox getAxisAlignedBoundingBox() const;

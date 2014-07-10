@@ -1,18 +1,22 @@
-#ifndef TODOLISTENER_HPP
-#define TODOLISTENER_HPP
+#ifndef BLUB_CORE_DISPATCHER_HPP
+#define BLUB_CORE_DISPATCHER_HPP
 
 #include "blub/async/predecl.hpp"
 #include "blub/core/list.hpp"
 #include "blub/core/noncopyable.hpp"
+#include "blub/core/scopedPtr.hpp"
 #include "blub/core/string.hpp"
 
-#include <boost/asio/io_service.hpp>
-#include <boost/bind.hpp>
+#include <functional>
 
 
 namespace boost
 {
     class thread;
+    namespace asio
+    {
+        class io_service;
+    }
 }
 
 
@@ -25,6 +29,8 @@ namespace async
 class dispatcher : public noncopyable
 {
 public:
+    typedef std::function<void ()> t_toCallFunction;
+
     dispatcher(const uint16& numThreads, const bool& endThreadsAfterAllDone, const string& threadName = "");
     virtual ~dispatcher();
 
@@ -34,17 +40,8 @@ public:
     void reset();
     void stop();
 
-    template<typename CompletionHandler>
-    void dispatch(CompletionHandler handler)
-    {
-        m_service.dispatch(handler);
-    }
-
-    template<typename CompletionHandler>
-    void post(CompletionHandler handler)
-    {
-        m_service.post(handler);
-    }
+    void dispatch(const t_toCallFunction &handler);
+    void post(const t_toCallFunction &handler);
 
     /**
      * @brief waitForQueueDone will work only if one thread
@@ -72,8 +69,8 @@ protected:
     const string m_threadName;
 
 private:
-    boost::asio::io_service m_service;
-    boost::asio::io_service::work* m_work;
+    scopedPointer<boost::asio::io_service> m_service;
+    void* m_work;
     uint16 m_numThreads;
     bool m_endThreadsAfterAllDone;
     typedef list<boost::thread*> t_threads;
@@ -86,4 +83,4 @@ private:
 }
 
 
-#endif // TODOLISTENER_HPP
+#endif // BLUB_CORE_DISPATCHER_HPP

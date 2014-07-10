@@ -1,16 +1,19 @@
-message("doing demoTerrain")
+
+
 
 set(sources
 noise.cpp
-mesh.cpp
 primitives.cpp
-PARENT_SCOPE
 )
+
+if (BLUB_USE_ASSIMP)
+  set(sources ${sources} mesh.cpp)
+endif(BLUB_USE_ASSIMP)
 
 set(headers
 Handler.hpp
 OgreTile.hpp
-PARENT_SCOPE
 )
 
+add_example(voxelterrain)
 

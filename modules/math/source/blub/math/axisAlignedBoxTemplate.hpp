@@ -11,7 +11,7 @@ namespace blub
 {
 
 
-template <class vector3Type>
+template <typename vector3Type>
 class axisAlignedBoxTemplate
 {
 public:

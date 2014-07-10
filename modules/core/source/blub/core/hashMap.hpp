@@ -1,11 +1,14 @@
-#ifndef HASHMAP_HPP
-#define HASHMAP_HPP
+#ifndef BLUB_CORE_HASHMAP_HPP
+#define BLUB_CORE_HASHMAP_HPP
+
+#include <blub/core/globals.hpp>
 
 #include <boost/unordered_map.hpp>
 
 
 namespace blub
 {
+
 
 template <class S,
     class T,
@@ -19,16 +22,7 @@ public:
 
 
     hashMap<S, T, H, P, A>() : t_base() {;}
-
-    typename t_base::const_iterator constBegin() const
-    {
-        return t_base::cbegin();
-    }
-
-    typename t_base::const_iterator constEnd() const
-    {
-        return t_base::cend();
-    }
+    hashMap<S, T, H, P, A>(const typename t_base::size_type& size) : t_base(size) {;}
 
     void insert(const typename t_base::key_type& key, const typename t_base::mapped_type& value)
     {
@@ -47,6 +41,8 @@ public:
 
 };
 
+
 }
 
-#endif // HASHMAP_HPP
+
+#endif // BLUB_CORE_HPP

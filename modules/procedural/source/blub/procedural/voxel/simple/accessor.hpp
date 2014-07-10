@@ -5,11 +5,11 @@
 #include "blub/core/globals.hpp"
 #include "blub/core/hashList.hpp"
 #include "blub/core/hashMap.hpp"
-#include "blub/core/log.hpp"
 #include "blub/core/noncopyable.hpp"
 #include "blub/core/signal.hpp"
 #include "blub/math/axisAlignedBoxInt32.hpp"
 #include "blub/math/vector3.hpp"
+#include "blub/procedural/log/global.hpp"
 #include "blub/procedural/voxel/simple/base.hpp"
 #include "blub/procedural/voxel/simple/container/base.hpp"
 #include "blub/procedural/voxel/simple/container/utils/tile.hpp"
@@ -126,6 +126,9 @@ protected:
     void tilesGotChangedMaster()
     {
         const auto& changedTiles(m_voxels.getTilesThatGotEdited());
+#ifdef BLUB_LOG_VOXEL
+        BLUB_PROCEDURAL_LOG_OUT() << "accessor tilesGotChangedMaster changedTiles.size():" << changedTiles.size();
+#endif
         BASSERT(!changedTiles.empty());
         /*if (changedTiles.empty())
         {
@@ -208,12 +211,12 @@ protected:
 
             const int32 voxelLengthLod = t_tile::voxelLengthLod;
             const vector3int32 toIterate[][2] = {
-                                                {{0, 0, 0}, {1, voxelLengthLod, voxelLengthLod}},
-                                                {{voxelLengthLod-2, 0, 0}, {voxelLengthLod-1, voxelLengthLod, voxelLengthLod}},
-                                                {{0, 0, 0}, {voxelLengthLod, 1, voxelLengthLod}},
-                                                {{0, voxelLengthLod-2, 0}, {voxelLengthLod, voxelLengthLod-1, voxelLengthLod}},
-                                                {{0, 0, 0}, {voxelLengthLod, voxelLengthLod, 1}},
-                                                {{0, 0, voxelLengthLod-2}, {voxelLengthLod, voxelLengthLod, voxelLengthLod-1}},
+                                                {vector3int32(0, 0, 0), vector3int32(1, voxelLengthLod, voxelLengthLod)},
+                                                {vector3int32(voxelLengthLod-2, 0, 0), vector3int32(voxelLengthLod-1, voxelLengthLod, voxelLengthLod)},
+                                                {vector3int32(0, 0, 0), vector3int32(voxelLengthLod, 1, voxelLengthLod)},
+                                                {vector3int32(0, voxelLengthLod-2, 0), vector3int32(voxelLengthLod, voxelLengthLod-1, voxelLengthLod)},
+                                                {vector3int32(0, 0, 0), vector3int32(voxelLengthLod, voxelLengthLod, 1)},
+                                                {vector3int32(0, 0, voxelLengthLod-2), vector3int32(voxelLengthLod, voxelLengthLod, voxelLengthLod-1)},
                                                 };
             for (int32 lod = 0; lod < 6; ++lod)
             {
@@ -292,6 +295,10 @@ protected:
         --m_numTilesInWork;
         if (m_numTilesInWork == 0)
         {
+            if (t_base::m_tilesThatGotEdited.size() == 0)
+            {
+                BLUB_LOG_WARNING() << "nothing changed";
+            }
             m_voxels.unlockRead();
             t_base::unlockForEditMaster();
         }

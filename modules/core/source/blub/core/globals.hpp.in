@@ -13,11 +13,12 @@
 #cmakedefine BLUB_BUILD_SYNC
 #cmakedefine BLUB_BUILD_WEB
 
-#cmakedefine BLUB_USE_OGRE3D
-#cmakedefine BLUB_USE_OIS
+#cmakedefine BLUB_USE_ASSIMP
 #cmakedefine BLUB_USE_BULLET
 #cmakedefine BLUB_USE_CEF3
-#cmakedefine BLUB_USE_ASSIMP
+#cmakedefine BLUB_USE_OGRE3D
+#cmakedefine BLUB_USE_OIS
+#cmakedefine BLUB_USE_PHYSX
 #cmakedefine BLUB_USE_SOCI
 
 #ifndef BLUB_USE_OGRE3D
@@ -29,24 +30,39 @@
 #ifndef BLUB_USE_CEF3
 #    define BLUB_NO_CEF3
 #endif
-#define BLUB_LINUX
+#include <boost/predef/os/linux.h>
+#include <boost/predef/os/windows.h>
+#if BOOST_OS_LINUX
+#   define BLUB_LINUX
+#endif
+#if BOOST_OS_WINDOWS
+#   define BLUB_WINDOWS
+#endif
 
+//#define BLUB_LOG_VOXEL
 // #define BLUB_LOG_UDP
 // #define BLUB_LOG_TCP
-// #define BLUB_LOG_PROCEDURAL_VOXEL_EDIT_MESH
+#define BLUB_LOG_PROCEDURAL_VOXEL_EDIT_MESH
 
 #ifndef NDEBUG
-#define BLUB_DEBUG
+#   define BLUB_DEBUG
+#   if !defined _DEBUG && defined BLUB_USE_PHYSX
+#       define _DEBUG 1 // for physx
+#   endif
 #else
-#define BLUB_RELEASE
+#   define BLUB_RELEASE
+#endif
+#if defined BLUB_LINUX && defined BLUB_USE_PHYSX
+#   define PX_LINUX
 #endif
 
 
 #ifdef BLUB_DEBUG
-#include <assert.h>
+#   include <assert.h>
 #endif
 #include <sstream>
 #include <string>
+#include <cmath>
 
 #include <boost/functional/hash_fwd.hpp>
 namespace boost {
@@ -143,13 +159,22 @@ namespace blub
     template <typename T>
     class vector;
     class vector2;
-    class vector2int32;
+
+    template <typename valueType, valueType valueDefault = 0>
+    class vector2Template;
+
+    typedef vector2Template<int32, 0> vector2int32;
+
     class vector3;
-    class vector3int32;
-    class vector3uint8;
+
+    template <typename valueType, valueType valueDefault = 0>
+    class vector3Template;
+
+    typedef vector3Template<int32, 0> vector3int32;
+    typedef vector3Template<uint8, 0> vector3uint8;
+
     template <typename T>
     class weakPointer;
-
 
     namespace ai {
         class aStar;
@@ -216,43 +241,6 @@ namespace blub
         class container;
         template<typename S>
         class search;
-    }
-    namespace physic {
-        class collisionObject;
-        class rigidEntity;
-        class system;
-        namespace constraint {
-            class base;
-            class fixed;
-            class sixAxis;
-        }
-        namespace gravity {
-            class base;
-            class linear;
-            class spherical;
-        }
-        namespace shape
-        {
-            class capsule;
-            class mesh;
-            class multiShape;
-            class multiSphere;
-            class shape;
-            class sphere;
-        }
-        namespace collisionListener {
-            class rigidEntity;
-        }
-        namespace voxel
-        {
-            namespace surface
-            {
-                template <class voxelType>
-                class multipleTiles;
-                template <class voxelType>
-                class tile;
-            }
-        }
     }
     namespace serialization {
         typedef boost::serialization::access access;

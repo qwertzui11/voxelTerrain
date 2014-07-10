@@ -109,7 +109,7 @@ int32 base<tileType>::getNumLod() const
 }
 
 template <class tileType>
-void base<tileType>::setCreateTileCallback(const base::t_createTileCallback &toSet)
+void base<tileType>::setCreateTileCallback(const t_createTileCallback &toSet)
 {
     for (t_lod &lod : m_lods)
     {

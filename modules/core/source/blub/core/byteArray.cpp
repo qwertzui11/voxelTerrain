@@ -2,34 +2,29 @@
 
 #include "blub/core/string.hpp"
 
-#include <cstring>
+#include <algorithm>
 
 
 using namespace blub;
 
 
-byteArray::byteArray(const char* str)
-    : t_base(strlen(str))
-{
-    strcpy(t_base::data(), str);
-}
 
 byteArray::byteArray(const byteArray &array)
     : t_base(array.size())
 {
-    memcpy(t_base::data(), array.data(), array.size());
+    std::copy_n(array.data(), array.size(), t_base::data());
 }
 
 byteArray::byteArray(const char *array, uint32 size)
     : t_base(size)
 {
-    memcpy(t_base::data(), array, size);
+    std::copy_n(array, size, t_base::data());
 }
 
 byteArray::byteArray(const string &str)
     : t_base(str.size())
 {
-    memcpy(t_base::data(), str.data(), str.size());
+    std::copy_n(str.data(), str.size(), t_base::data());
 }
 
 byteArray byteArray::mid(const uint32 &index, const int32 &length) const

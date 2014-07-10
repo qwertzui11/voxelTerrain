@@ -87,19 +87,19 @@ public:
      * @param path has to be a valid path. Relative or absolute.
      * @return true if successfully read and loaded
      */
-    bool load(const blub::string &path)
+    bool load(const blub::string &path, const blub::transform &trans)
     {
         Assimp::Importer* importer(new Assimp::Importer());
 
         const aiScene *scene = importer->ReadFile(path.c_str(), aiProcess_Triangulate);
         if (scene == nullptr)
         {
-            blub::BERROR("scene == nullptr loader->GetErrorString():" + blub::string(importer->GetErrorString()));
+            BLUB_PROCEDURAL_LOG_ERROR() << "scene == nullptr loader->GetErrorString():" << importer->GetErrorString();
             delete importer;
             return false;
         }
 
-        bool result(loadScene(*scene));
+        bool result(loadScene(*scene, trans));
 
         delete importer;
 
@@ -111,21 +111,22 @@ public:
      * @param scene Scene to load
      * @return true if successfully loaded
      */
-    virtual bool loadScene(const aiScene &scene)
+    virtual bool loadScene(const aiScene &scene, const blub::transform &trans)
     {
         if (!scene.HasMeshes())
         {
-            blub::BERROR("!scene.HasMeshes()");
+            BLUB_PROCEDURAL_LOG_ERROR() << "!scene.HasMeshes()";
             return false;
         }
 
 #ifdef BLUB_LOG_PROCEDURAL_VOXEL_EDIT_MESH
-        blub::BOUT("scene.mNumMeshes:" + blub::string::number(scene.mNumMeshes));
+        BLUB_LOG_OUT() << "scene.mNumMeshes:" << scene.mNumMeshes << " scene.mRootNode->mNumChildren:" << scene.mRootNode->mNumChildren;
 #endif
+
         for(int32 indMesh = 0; indMesh < scene.mNumMeshes; ++indMesh)
         {
             aiMesh *mesh(scene.mMeshes[indMesh]);
-            loadMesh(*mesh); // ignore result
+            loadMesh(*mesh, trans); // ignore result
         }
         return true;
     }
@@ -135,21 +136,21 @@ public:
      * @param mesh Mesh to load
      * @return true if successfully loaded
      */
-    virtual bool loadMesh(const aiMesh &mesh)
+    virtual bool loadMesh(const aiMesh &mesh, const blub::transform &trans)
     {
         typedef vector<vector3> t_positions;
 
 #ifdef BLUB_LOG_PROCEDURAL_VOXEL_EDIT_MESH
-        blub::BOUT("mesh.mName:" + blub::string(mesh.mName.C_Str(), mesh.mName.length));
+        BLUB_PROCEDURAL_LOG_OUT() << "mesh.mName:" << blub::string(mesh.mName.C_Str(), mesh.mName.length);
 #endif
         if (!mesh.HasFaces())
         {
-            blub::BERROR("!scene.mMeshes[indMesh]->HasFaces()");
+            BLUB_PROCEDURAL_LOG_ERROR() << "!scene.mMeshes[indMesh]->HasFaces()";
             return false;
         }
         if (!mesh.HasPositions())
         {
-            blub::BERROR("!mesh.HasPositions()");
+            BLUB_PROCEDURAL_LOG_ERROR() << "!mesh.HasPositions()";
             return false;
         }
 
@@ -161,7 +162,8 @@ public:
         for (blub::uint32 indVertex = 0; indVertex < mesh.mNumVertices; ++indVertex)
         {
             const aiVector3D &posToCast(mesh.mVertices[indVertex]);
-            const vector3 casted(posToCast.x, posToCast.y, posToCast.z);
+            vector3 casted(posToCast.x, posToCast.y, posToCast.z);
+            casted *= trans.scale;
             positions[indVertex] = casted;
             m_aabb.merge(casted);
         }
@@ -171,7 +173,7 @@ public:
             BASSERT(faceToCast.mNumIndices == 3);
             if (faceToCast.mNumIndices != 3)
             {
-                blub::BWARNING("faceToCast.mNumIndices != 3");
+				BLUB_PROCEDURAL_LOG_WARNING() << "faceToCast.mNumIndices != 3";
                 continue;
             }
             const triangleVector3 resultTriangle(   positions[faceToCast.mIndices[0]],
@@ -217,7 +219,7 @@ protected:
      * @param voxelContainerOffset Absolut position of the voxelContainer.
      * @param trans Transform
      */
-    void calculateVoxel(t_tileContainer *voxelContainer, const vector3int32 &voxelContainerOffset, const transform &trans) const
+    void calculateVoxel(t_tileContainer *voxelContainer, const vector3int32 &voxelContainerOffset, const transform &/*trans*/) const
     {
         const vector3int32 posContainerAbsolut(voxelContainerOffset*t_tileContainer::voxelLength);
 
@@ -242,20 +244,21 @@ protected:
                             const vector3int32 posVoxel(indX, indY, indZ);
                             vector3 posAbsolut(posContainerAbsolut + posVoxel);
 
-                            posAbsolut = posAbsolut / trans.scale;
+                            // posAbsolut = posAbsolut / trans.scale;
                             // posAbsolut -= trans.position;
 
                             const ray test(posAbsolut, rayDir[indAxis]);
 
-                            const vector3 segmentStart  (posAbsolut+rayDir[indAxis]*(-1000000.)); // TODO: fix me after ray support for boost::geometry is of their todolist
-                            const vector3 segmentEnd    (posAbsolut+rayDir[indAxis]*(+1000000.));
+                            const vector3 segmentStart  (posAbsolut+rayDir[indAxis]*(-10000.)); // TODO: fix me after ray support for boost::geometry is of their todolist
+                            const vector3 segmentEnd    (posAbsolut+rayDir[indAxis]*(+10000.));
 
                             t_segment segment(t_point(segmentStart.x, segmentStart.y, segmentStart.z), t_point(segmentEnd.x, segmentEnd.y, segmentEnd.z));
                             typedef std::vector<t_value> t_resultTriangles;
                             t_resultTriangles resultTriangles;
                             tree->query(boost::geometry::index::intersects(segment), std::back_inserter(resultTriangles));
 
-                            typedef map<real, blub::plane> t_cutPoints;
+                            typedef pair<real, blub::plane> t_cutPoint;
+                            typedef vector<t_cutPoint> t_cutPoints;
                             t_cutPoints cutPoints;
                             vector3 cutPoint;
                             for (t_resultTriangles::const_iterator it = resultTriangles.cbegin(); it != resultTriangles.cend(); ++it)
@@ -263,16 +266,28 @@ protected:
                                 const triangleVector3 &triangleWork(it->second);
                                 if (intersection::intersect(test, triangleWork, &cutPoint))
                                 {
-                                    real cutPointStart = (cutPoint[indAxis]*trans.scale[indAxis]) - static_cast<real>(posContainerAbsolut[indAxis]);
-                                    cutPoints.insert(cutPointStart, triangleWork.getPlane());
+                                    bool insert(true);
+//                                    if (!cutPoints.empty())
+//                                    {
+//                                        const plane planeTriBefore(cutPoints.at(cutPoints.size()-1).second);
+//                                        if (/*math::abs*/(planeTriBefore.normal.dotProduct(triangleWork.getPlane().normal)) < 0.)
+//                                        {
+//                                            insert = false;
+//                                        }
+//                                    }
+                                    if (insert)
+                                    {
+                                        real cutPointStart = cutPoint[indAxis] - static_cast<real>(posContainerAbsolut[indAxis]);
+                                        cutPoints.push_back(t_cutPoint(cutPointStart, triangleWork.getPlane()));
+                                    }
                                 }
                             }
-                            if(cutPoints.empty())
+                            if(cutPoints.size() < 2)
                             {
                                 continue;
                             }
 
-                            typedef vector<pair<const real, blub::plane> > t_cutPointsFiltered;
+                            typedef vector<t_cutPoint> t_cutPointsFiltered;
                             t_cutPointsFiltered cutPointsFiltered;
                             for (t_cutPoints::const_iterator it = cutPoints.cbegin(); it != cutPoints.cend(); ++it)
                             {
@@ -288,10 +303,10 @@ protected:
                                 cutPointsFiltered.push_back(*it);
                             }
 
-                            if(cutPointsFiltered.size()%2 != 0)
+                            if(cutPointsFiltered.size()%2 != 0 && cutPointsFiltered.size() > 0)
                             {
-                                blub::BWARNING("cutPointsFiltered.size()%2 != 0 cutPointsFiltered.size():" + string::number(cutPointsFiltered.size()));
-                                continue;
+								BLUB_PROCEDURAL_LOG_WARNING() << "cutPointsFiltered.size()%2 != 0 cutPointsFiltered.size():" << cutPointsFiltered.size();
+                                cutPointsFiltered.pop_back();
                             }
                             for (t_cutPointsFiltered::const_iterator it = cutPointsFiltered.cbegin(); it != cutPointsFiltered.cend(); ++it)
                             {
@@ -308,9 +323,9 @@ protected:
                                 if (length < 1.)
                                 {
 #ifdef BLUB_LOG_PROCEDURAL_VOXEL_EDIT_MESH
-                                    blub::BOUT("length < 1.");
+//                                    blub::BOUT("length < 1.");
 #endif
-                                    continue;
+//                                    continue;
                                 }
                                 //BLUB_LOG_OUT() << "creating line length:" << length;
                                 switch (indAxis)

@@ -49,7 +49,7 @@ boost::log::formatting_ostream& operator<<
 void system::addFile(const string &file)
 {
     boost::log::add_file_log(
-                file,
+                static_cast<std::string>(file),
                 boost::log::keywords::format =
                         (
                             boost::log::expressions::stream

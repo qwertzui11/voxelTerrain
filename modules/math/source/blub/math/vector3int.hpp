@@ -1,7 +1,8 @@
-#ifndef VECTOR3TEMPLATE_HPP
-#define VECTOR3TEMPLATE_HPP
+#ifndef BLUB_MATH_VECTOR3TEMPLATE_HPP
+#define BLUB_MATH_VECTOR3TEMPLATE_HPP
 
 #include "blub/math/math.hpp"
+#include "blub/math/vector3.hpp"
 #include "blub/serialization/access.hpp"
 #include "blub/serialization/nameValuePair.hpp"
 
@@ -9,7 +10,7 @@
 namespace blub
 {
 
-template <typename valueType, valueType valueDefault = 0>
+template <typename valueType, valueType valueDefault>
 class vector3Template
 {
 public:
@@ -35,18 +36,26 @@ public:
         ;
     }
 
-    /*vector3Template(const t_thisClass& copy)
+    vector3Template(const t_thisClass& copy)
         : x(copy.x)
         , y(copy.y)
         , z(copy.z)
     {
         ;
-    }*/
+    }
 
     vector3Template(const valueType& val)
         : x(val)
         , y(val)
         , z(val)
+    {
+        ;
+    }
+
+    vector3Template(const vector3& cast)
+        : x(cast.x)
+        , y(cast.y)
+        , z(cast.z)
     {
         ;
     }
@@ -111,9 +120,19 @@ public:
         return t_thisClass(x/other.x, y/other.y, z/other.z);
     }
 
-    t_thisClass operator / (const valueType& other) const
+    t_thisClass operator / (const t_valueType& other) const
     {
         return t_thisClass(x/other, y/other, z/other);
+    }
+
+    t_thisClass operator % (const t_thisClass& other) const
+    {
+        return t_thisClass(x % other.x, y % other.y, z % other.z);
+    }
+
+    t_thisClass operator % (const t_valueType& other) const
+    {
+        return t_thisClass(x % other, y % other, z % other);
     }
 
     valueType operator [] (const blub::uint8& index) const
@@ -153,7 +172,25 @@ public:
     valueType z;
 };
 
+
+template <typename valueType, valueType valueDefault>
+std::ostream &operator<<(std::ostream &os, const vector3Template<valueType, valueDefault>& toCast)
+{
+    return os << "(" << toCast.x << "," << toCast.y << "," << toCast.z << ")";
+}
+
+template <typename valueType, valueType valueDefault>
+std::size_t hash_value(const vector3Template<valueType, valueDefault>& value)
+{
+    std::size_t result(value.x);
+    boost::hash_combine(result, value.y);
+    boost::hash_combine(result, value.z);
+
+    return result;
 }
 
 
-#endif // VECTOR3TEMPLATE_HPP
+}
+
+
+#endif // BLUB_MATH_VECTOR3TEMPLATE_HPP

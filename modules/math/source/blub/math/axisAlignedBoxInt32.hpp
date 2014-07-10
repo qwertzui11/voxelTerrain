@@ -2,7 +2,7 @@
 #define AXISALIGNEDBOXINT32_HPP
 
 #include "blub/math/axisAlignedBoxTemplate.hpp"
-#include "blub/math/vector3int32.hpp"
+#include "blub/math/vector3int.hpp"
 
 
 namespace blub

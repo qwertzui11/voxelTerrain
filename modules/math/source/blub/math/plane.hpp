@@ -1,5 +1,5 @@
-#ifndef PLANE_HPP
-#define PLANE_HPP
+#ifndef BLUB_MATH_PLANE_HPP
+#define BLUB_MATH_PLANE_HPP
 
 #include "blub/math/vector3.hpp"
 
@@ -25,6 +25,7 @@ public:
     plane(const plane& other);
     plane(vector3 p0, vector3 p1, vector3 p2);
     plane(vector3 pos, vector3 normal);
+    plane(const vector3 &normal, const real &d);
 
     /** This is a pseudodistance. The sign of the return value is
         positive if the point is on the positive side of the plane,
@@ -53,5 +54,5 @@ public:
 
 }
 
-#endif // PLANE_HPP
+#endif // BLUB_MATH_PLANE_HPP
 

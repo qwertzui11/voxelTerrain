@@ -6,7 +6,7 @@
 #include "blub/core/hashList.hpp"
 #include "blub/core/hashMap.hpp"
 #include "blub/core/signal.hpp"
-#include "blub/math/vector3int32.hpp"
+#include "blub/math/vector3int.hpp"
 #include "blub/procedural/log/global.hpp"
 #include "blub/procedural/voxel/simple/accessor.hpp"
 
@@ -139,9 +139,12 @@ protected:
     void editDoneMaster()
     {
         const typename t_voxelAccessor::t_tilesGotChangedMap& change(m_voxels.getTilesThatGotEdited());
+#ifdef BLUB_LOG_VOXEL
+        BLUB_PROCEDURAL_LOG_OUT() << "surface editDoneMaster change.size():" << change.size();
+#endif
         if (change.empty())
         {
-            blub::BWARNING("change.empty()");
+            BLUB_PROCEDURAL_LOG_WARNING() << "change.empty()";
             return;
         }
 
@@ -188,7 +191,7 @@ protected:
 
         if (workTile->getIndices().empty())
         {
-#ifdef BLUB_LOG_VOXEL_SURFACE
+#ifdef BLUB_LOG_VOXEL
             BLUB_PROCEDURAL_LOG_WARNING() << "workTile->getIndices().empty() id:" << id << " m_lod:" << m_lod << " work->getNumVoxelLargerZero():" << work->getNumVoxelLargerZero();
 #endif
             t_base::m_master.post(boost::bind(&surface::afterCalculateSurfaceMaster, this, id, nullptr));
@@ -206,8 +209,8 @@ protected:
      */
     void afterCalculateSurfaceMaster(const t_tileId& id, t_tilePtr workTile)
     {
-#ifdef BLUB_LOG_VOXEL_SURFACE
-        BOUT("afterCalculateSurfaceMaster id:" + blub::string::number(id));
+#ifdef BLUB_LOG_VOXEL
+        BLUB_LOG_OUT() << "afterCalculateSurfaceMaster id:" << id;
 #endif
 
         typename t_tilesMap::const_iterator it(m_tiles.find(id));

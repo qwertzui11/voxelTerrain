@@ -82,9 +82,9 @@ int main(int /*argc*/, char* /*argv*/[])
 
         // renderer
         t_voxelRenderer::t_syncRadiusList lodRadien(numLod);
-        lodRadien[0] = voxel::tile::container<t_voxel>::voxelLength*1.0;
+        lodRadien[0] = voxel::tile::container<t_voxel>::voxelLength*2.0;
         lodRadien[1] = voxel::tile::container<t_voxel>::voxelLength*2.0;
-        lodRadien[2] = voxel::tile::container<t_voxel>::voxelLength*3.0;
+        lodRadien[2] = voxel::tile::container<t_voxel>::voxelLength*2.0;
         voxelRenderer.reset(new t_voxelRenderer(terrainDispatcher, *voxelSurface, lodRadien));
         voxelRenderer->setCreateTileCallback(callbackCreate);
         cameraIdentifier = sync::identifier::create();

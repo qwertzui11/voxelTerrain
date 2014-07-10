@@ -1,7 +1,7 @@
 #include "updater.hpp"
 
 #include "blub/async/deadlineTimer.hpp"
-#include "blub/core/log.hpp"
+#include "blub/async/log/global.hpp"
 
 #include <boost/chrono.hpp>
 #include <boost/thread.hpp>
@@ -25,7 +25,7 @@ updater::updater(const string &threadName)
 
 updater::~updater()
 {
-    blub::BOUT("destructor m_threadName:" + m_threadName);
+	BLUB_ASYNC_LOG_OUT() << "destructor m_threadName:" << m_threadName;
     stop();
 }
 
@@ -76,7 +76,7 @@ void updater::run(const real& frames, const bool& threaded)
     }
     dispatcher::start();
 
-    blub::BOUT("run end m_threadName:" + m_threadName);
+    BLUB_ASYNC_LOG_OUT() << "run end m_threadName:" << m_threadName;
 }
 
 bool updater::runOneFrame(const real& delta)

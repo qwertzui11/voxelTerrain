@@ -135,7 +135,7 @@ int main(int /*argc*/, char* /*argv*/[])
         voxelContainer->editVoxel(aabEdit, transform(vector3(20., 0., 15.), quaternion(), 4.));
         voxelContainer->editVoxel(aabEdit, transform(vector3(35., 0., 15.), quaternion(), 8.));
 
-        // boxes
+//        // boxes
 //        quaternion rotation;
 //        rotation = rotation * quaternion(math::sin(0.50/2.), 0., 0., math::cos(0.5/2.));
 //        rotation = rotation * quaternion(0., math::sin(0.75/2.), 0., math::cos(0.5/2.));

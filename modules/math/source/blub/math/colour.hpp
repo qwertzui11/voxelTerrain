@@ -34,7 +34,7 @@ public:
         , b(other.b)
         , a(other.a)
     {;}
-    colour(const real& r_, const real& g_, const real& b_, const real& a_)
+    colour(const real& r_, const real& g_, const real& b_, const real& a_ = 1.)
         : r(r_)
         , g(g_)
         , b(b_)
