@@ -60,7 +60,7 @@ option (BLUB_BUILD_SYNC "build sync" ON)
 option (BLUB_BUILD_EXAMPLES "build examples" ON)
 #option (BLUB_BUILD_TESTS "build tests" ON)
 
-option (BLUB_USE_ASSIMP "use assimp" ON)
+option (BLUB_USE_ASSIMP "use assimp" OFF)
 #option (BLUB_USE_BULLET "use bullet" ON)
 #option (BLUB_USE_PHYSX "use physx" OFF)
 #option (BLUB_USE_CEF3 "use cef3" ON)
