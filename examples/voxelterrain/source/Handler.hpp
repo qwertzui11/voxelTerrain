@@ -25,10 +25,10 @@ public:
      * @brief Handler constructor
      */
     Handler()
-        : graphicDispatcher(0, true)
-        , camera(nullptr)
+        : camera(nullptr)
         , keyboard(nullptr)
         , mouse(nullptr)
+        , graphicDispatcher(0, true)
         , m_lookVert(blub::math::pi)
         , m_lookHor(0.)
         , m_forward(false)
@@ -48,8 +48,6 @@ public:
         inputManager->destroyInputObject(keyboard);
         inputManager->destroyInputObject(mouse);
         OIS::InputManager::destroyInputSystem(inputManager);
-
-        renderScene->destroyAllMovableObjects();
     }
 
     /**
@@ -71,7 +69,7 @@ public:
         renderSystem->initialise(true);
 
         renderScene = renderSystem->createSceneManager(Ogre::ST_GENERIC);
-        // renderScene = renderSystem->createSceneManager("OctreeSceneManager");
+//        renderScene = renderSystem->createSceneManager("OctreeSceneManager");
 
 //        Ogre::ResourceGroupManager::getSingleton().addResourceLocation("../data", "FileSystem");
 //        Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
@@ -187,7 +185,7 @@ public:
         m_lookHor += static_cast<blub::real>(arg.state.Y.rel) / -500.;
         m_lookVert += static_cast<blub::real>(arg.state.X.rel) / -500.;
 
-		m_lookHor = blub::math::clamp<blub::real>(m_lookHor, -blub::math::piHalf, blub::math::piHalf);
+        m_lookHor = blub::math::clamp<blub::real>(m_lookHor, -blub::math::piHalf, blub::math::piHalf);
 
         const blub::quaternion rotVert(0, blub::math::sin(m_lookVert / 2.0), 0, blub::math::cos(m_lookVert / 2.0));
         const blub::quaternion rotHor(blub::math::sin(m_lookHor / 2.0), 0, 0, blub::math::cos(m_lookHor / 2.0));
@@ -287,8 +285,6 @@ public:
     t_sigMouseGotPressed* signalMouseGotPressed() {return &m_sigMouseGotPressed;}
 
 public:
-    blub::async::dispatcher graphicDispatcher;
-
     blub::scopedPointer<Ogre::Root> renderSystem;
     Ogre::SceneManager* renderScene;
     Ogre::Camera* camera;
@@ -296,6 +292,8 @@ public:
     OIS::InputManager *inputManager;
     OIS::Keyboard *keyboard;
     OIS::Mouse *mouse;
+
+    blub::async::dispatcher graphicDispatcher;
 
 protected:
     blub::real m_lookVert;
