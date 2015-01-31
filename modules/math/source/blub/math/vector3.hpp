@@ -4,6 +4,7 @@
 #include "blub/core/classVersion.hpp"
 #include "blub/core/globals.hpp"
 #include "blub/math/math.hpp"
+#include "blub/math/predecl.hpp"
 #include "blub/serialization/access.hpp"
 #include "blub/serialization/nameValuePair.hpp"
 #ifdef BLUB_USE_PHYSX
@@ -43,7 +44,7 @@ public:
     operator physx::PxVec3() const
     {return physx::PxVec3(x,y,z);}
 #endif
-#ifndef BLUB_NO_BULLET
+#ifdef BLUB_USE_BULLET
     vector3(const btVector3 &vec);
     operator btVector3() const;
 #endif

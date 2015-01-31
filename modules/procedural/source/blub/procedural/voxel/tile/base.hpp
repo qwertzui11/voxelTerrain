@@ -24,7 +24,7 @@ namespace tile
  * Never instance this class and derived classes without a shared pointer.
  */
 template <typename classType>
-class base : public enableSharedFromThis<classType>, public noncopyable
+class base : public enableSharedFromThis<classType>//, public noncopyable
 {
 public:
     typedef sharedPointer<classType> pointer;

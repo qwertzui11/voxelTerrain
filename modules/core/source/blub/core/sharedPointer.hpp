@@ -1,7 +1,7 @@
 #ifndef BLUB_SHAREDPOINTER_HPP
 #define BLUB_SHAREDPOINTER_HPP
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 
 namespace blub
@@ -9,38 +9,39 @@ namespace blub
 
 
 template <class T>
-class sharedPointer : public boost::shared_ptr<T>
+class sharedPointer : public std::shared_ptr<T>
 {
 public:
+    typedef std::shared_ptr<T> t_base;
+
     sharedPointer()
-        : boost::shared_ptr<T>()
     {}
     sharedPointer(T* ptr)
-        : boost::shared_ptr<T>(ptr)
+        : t_base(ptr)
     {}
-    sharedPointer(boost::shared_ptr<T> ptr)
-        : boost::shared_ptr<T>(ptr)
+    sharedPointer(t_base ptr)
+        : t_base(ptr)
     {}
     template <class U>
-    sharedPointer(boost::shared_ptr<U> ptr)
-        : boost::shared_ptr<T>(ptr)
+    sharedPointer(std::shared_ptr<U> ptr)
+        : t_base(ptr)
     {}
 
     template <class U>
     sharedPointer<U> staticCast()
     {
-        boost::shared_ptr<U> result(boost::static_pointer_cast<U>(*this));
+        std::shared_ptr<U> result(std::static_pointer_cast<U>(*this));
         return result;
     }
 
     T* data() const
     {
-        return boost::shared_ptr<T>::get();
+        return t_base::get();
     }
 
     void reset()
     {
-        boost::shared_ptr<T>::reset();
+        t_base::reset();
     }
 
     bool isNull() const
@@ -51,6 +52,10 @@ public:
 protected:
 
 };
+
+
+using std::make_shared;
+
 
 }
 

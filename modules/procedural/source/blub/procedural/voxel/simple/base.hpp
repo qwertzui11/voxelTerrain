@@ -3,16 +3,17 @@
 
 #include "blub/async/mutexReadWrite.hpp"
 #include "blub/async/predecl.hpp"
+#include "blub/core/bind.hpp"
 #include "blub/core/globals.hpp"
 #include "blub/core/hashMap.hpp"
 #include "blub/core/signal.hpp"
 #include "blub/async/dispatcher.hpp"
-#include "blub/async/seperate.hpp"
+#include "blub/async/strand.hpp"
 #include "blub/math/vector3int.hpp"
 #include "blub/procedural/log/global.hpp"
 #include "blub/procedural/predecl.hpp"
 
-#include <boost/function/function0.hpp>
+#include <functional>
 
 
 namespace blub
@@ -34,15 +35,16 @@ template <class tileType>
 class base : public noncopyable
 {
 public:
-    typedef tileType t_data;
+    typedef tileType t_tile;
+    typedef sharedPointer<t_tile> t_tilePtr;
 
-    typedef base<t_data> t_thisClass;
+    typedef base<t_tile> t_thisClass;
 
     /** id Identifier. Contains voxel from id*blub::procedural::voxel::tile::container::voxelLength to (id+1)*blub::procedural::voxel::tile::container::voxelLength-1 */
     typedef vector3int32 t_tileId;
-    typedef hashMap<t_tileId, t_data> t_tilesGotChangedMap;
+    typedef hashMap<t_tileId, t_tilePtr> t_tilesGotChangedMap;
 
-    typedef boost::function<t_data ()> t_createTileCallback;
+    typedef std::function<t_tilePtr ()> t_createTileCallback;
 
     /**
      * @brief base constructor
@@ -52,7 +54,7 @@ public:
     /**
      * @brief ~base destructor
      */
-    virtual ~base();
+    ~base();
 
     /**
      * @brief lockForEdit locks the class for editing/writing it.
@@ -95,7 +97,7 @@ public:
      * The master calls all methods which end with *Master.
      * @return
      */
-    blub::async::seperate &getMaster();
+    blub::async::strand &getMaster();
 
     typedef blub::signal<void ()> t_sigEditDone;
     /**
@@ -111,7 +113,7 @@ protected:
      * @param toAdd
      * @see getTilesThatGotEdited()
      */
-    void addToChangeList(const t_tileId& id, t_data toAdd);
+    void addToChangeList(const t_tileId& id, t_tilePtr toAdd);
 
     /**
      * @brief tryLockForEditMaster tries to lock for write. Call by master dispatcher.
@@ -131,14 +133,14 @@ protected:
      * @brief createTile creates a new Tile. Uses callback set by setCreateTileCallback()
      * @return
      */
-    virtual t_data createTile() const;
+    virtual t_tilePtr createTile() const;
 
 protected:
     /**
      * @brief m_master The master synchronises jobs for the worker-thread and writes to class member.
      * The master calls all methods which end with *Master.
      */
-    blub::async::seperate m_master;
+    blub::async::strand m_master;
     /**
      * @brief m_worker use it to dispatch heavy work. Don't write to class member with it.
      * Do not use any locks. Use m_master for such tasks.
@@ -146,7 +148,6 @@ protected:
     blub::async::dispatcher &m_worker;
 
     t_tilesGotChangedMap m_tilesThatGotEdited;
-private:
 
     t_createTileCallback m_createTileCallback;
 
@@ -155,84 +156,84 @@ private:
     t_sigEditDone m_sigEditDone;
 };
 
-template <class dataType>
-base<dataType>::base(async::dispatcher &worker)
+template <class tileType>
+base<tileType>::base(async::dispatcher &worker)
     : m_master(worker)
     , m_worker(worker)
+//    , m_createTileCallback(blub::bind(&t_tile::create)) // TODO good idea, techn difficult, via config
 {
     ;
 }
 
-template <class dataType>
-base<dataType>::~base()
+template <class tileType>
+base<tileType>::~base()
 {
 }
 
-template <class dataType>
-void base<dataType>::lockForEdit()
+template <class tileType>
+void base<tileType>::lockForEdit()
 {
     m_master.post(boost::bind(&base::lockForEditMaster, this));
 }
 
-template <class dataType>
-void base<dataType>::unlockForEdit()
+template <class tileType>
+void base<tileType>::unlockForEdit()
 {
     m_master.post(boost::bind(&base::unlockForEditMaster, this));
 }
 
-template <class dataType>
-void base<dataType>::lockForRead()
+template <class tileType>
+void base<tileType>::lockForRead()
 {
     m_classLocker.lockForRead();
 }
 
-template <class dataType>
-void base<dataType>::unlockRead()
+template <class tileType>
+void base<tileType>::unlockRead()
 {
     m_classLocker.unlockRead();
 }
 
-template <class dataType>
-const typename base<dataType>::t_tilesGotChangedMap &base<dataType>::getTilesThatGotEdited() const
+template <class tileType>
+const typename base<tileType>::t_tilesGotChangedMap &base<tileType>::getTilesThatGotEdited() const
 {
     return m_tilesThatGotEdited;
 }
 
-template <class dataType>
-void base<dataType>::setCreateTileCallback(const t_createTileCallback &callback)
+template <class tileType>
+void base<tileType>::setCreateTileCallback(const t_createTileCallback &callback)
 {
     m_createTileCallback = callback;
 }
 
-template <class dataType>
-void base<dataType>::addToChangeList(const t_tileId &id, t_data toAdd)
+template <class tileType>
+void base<tileType>::addToChangeList(const t_tileId &id, t_tilePtr toAdd)
 {
     BASSERT(!m_classLocker.tryLockForWrite());
     m_tilesThatGotEdited.insert(id, toAdd);
 }
 
-template <class dataType>
-bool base<dataType>::tryLockForEditMaster()
+template <class tileType>
+bool base<tileType>::tryLockForEditMaster()
 {
-    return m_classLocker.tryLockForWrite();
-    /*const bool result(t_base::tryLockForWrite()); // TODO: compiler (gcc-4.7.2) crashes - wait for new version and fix
+    const bool result(m_classLocker.tryLockForWrite());
     if (result)
     {
         m_tilesThatGotEdited.clear();
     }
-    return result;*/
+    return result;
 }
 
-template <class dataType>
-void base<dataType>::lockForEditMaster()
+template <class tileType>
+void base<tileType>::lockForEditMaster()
 {
     m_classLocker.lockForWrite();
 
     m_tilesThatGotEdited.clear();
 }
 
-template <class dataType>
-void base<dataType>::unlockForEditMaster()
+template <class tileType>
+void base<tileType>::unlockForEditMaster()
 {
     m_classLocker.unlock();
 #ifdef BLUB_LOG_VOXEL
@@ -244,20 +245,20 @@ void base<dataType>::unlockForEditMaster()
     }
 }
 
-template <class dataType>
-typename base<dataType>::t_data base<dataType>::createTile() const
+template <class tileType>
+typename base<tileType>::t_tilePtr base<tileType>::createTile() const
 {
     return m_createTileCallback();
 }
 
-template <class dataType>
-blub::async::seperate &base<dataType>::getMaster()
+template <class tileType>
+blub::async::strand &base<tileType>::getMaster()
 {
     return m_master;
 }
 
-template <class dataType>
-typename base<dataType>::t_sigEditDone *base<dataType>::signalEditDone()
+template <class tileType>
+typename base<tileType>::t_sigEditDone *base<tileType>::signalEditDone()
 {
     return &m_sigEditDone;
 }

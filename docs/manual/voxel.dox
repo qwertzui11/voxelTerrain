@@ -66,20 +66,20 @@ There are precompiled binaries for Visual Studio 2012 (msvc11) <a href="https://
 @subsection dependencies Dependencies
 The only dependency mandatory is <a href="http://boost.org">boost</a>.
 Used get
-<a href="http://www.boost.org/doc/libs/1_55_0/libs/bind/bind.html">boost::bind</a>,
-<a href="http://www.boost.org/doc/libs/1_55_0/doc/html/boost_asio.html">boost::asio</a> (used for dispatching work and synchronizing threads - Lock-free implementation),
-<a href="http://www.boost.org/doc/libs/1_55_0/doc/html/date_time.html">boost::date_time</a>,
-<a href="http://www.boost.org/doc/libs/1_55_0/doc/html/chrono.html">boost::chrono</a>,
-<a href="http://www.boost.org/doc/libs/1_55_0/libs/filesystem/doc/index.htm">boost::filesystem</a>,
-<a href="http://www.boost.org/doc/libs/1_55_0/doc/html/thread.html">boost::thread</a>,
-<a href="http://www.boost.org/doc/libs/1_55_0/doc/html/function.html">boost::function</a>,
-<a href="http://www.boost.org/doc/libs/1_55_0/libs/log/doc/html/log/detailed/sources.html">boost::log</a>,
-<a href="http://www.boost.org/doc/libs/1_55_0/libs/geometry/doc/html/index.html">boost::geometry</a> and
-<a href="http://www.boost.org/doc/libs/1_55_0/doc/html/signals2.html">boost::signals2</a>.
+<a href="http://www.boost.org/doc/libs/1_57_0/libs/bind/bind.html">boost::bind</a>,
+<a href="http://www.boost.org/doc/libs/1_57_0/doc/html/boost_asio.html">boost::asio</a> (used for dispatching work and synchronizing threads - Lock-free implementation),
+<a href="http://www.boost.org/doc/libs/1_57_0/doc/html/date_time.html">boost::date_time</a>,
+<a href="http://www.boost.org/doc/libs/1_57_0/doc/html/chrono.html">boost::chrono</a>,
+<a href="http://www.boost.org/doc/libs/1_57_0/libs/filesystem/doc/index.htm">boost::filesystem</a>,
+<a href="http://www.boost.org/doc/libs/1_57_0/doc/html/thread.html">boost::thread</a>,
+<a href="http://www.boost.org/doc/libs/1_57_0/doc/html/function.html">boost::function</a>,
+<a href="http://www.boost.org/doc/libs/1_57_0/libs/log/doc/html/log/detailed/sources.html">boost::log</a>,
+<a href="http://www.boost.org/doc/libs/1_57_0/libs/geometry/doc/html/index.html">boost::geometry</a> and
+<a href="http://www.boost.org/doc/libs/1_57_0/doc/html/signals2.html">boost::signals2</a>.
 
 @subsection opt_dependencies Optional dependencies
 - For mesh to voxel <a href="http://collada.org">collada</a> gets used.
 - The examples use <a href="http://ogre3d.org">ogre3d</a> for 3d-rendering and <a href="https://github.com/wgois/Object-oriented-Input-System--OIS-">OIS</a> for input handling.
-- If you'd like to serialize, check out <a href="http://www.boost.org/doc/libs/1_55_0/libs/serialization/doc/index.html">boost::serialization</a>.
+- If you'd like to serialize, check out <a href="http://www.boost.org/doc/libs/1_57_0/libs/serialization/doc/index.html">boost::serialization</a>.
 
 */

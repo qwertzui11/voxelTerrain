@@ -25,3 +25,7 @@ colour::operator Ogre::ColourValue() const
 #endif
 
 
+std::ostream &blub::operator<<(std::ostream &ostr, const colour &toCast)
+{
+    return ostr << "(" << toCast.r << "," << toCast.g << "," << toCast.b << "," << toCast.a << ")";
+}

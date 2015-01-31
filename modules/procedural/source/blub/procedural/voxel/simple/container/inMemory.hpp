@@ -28,11 +28,11 @@ namespace container
  * Instead the class saves the state empty/full.
  * Tiles that are full or empty dont produce a surface.
  */
-template <class voxelType>
-class inMemory : public base<voxelType>
+template <class configType>
+class inMemory : public base<configType>
 {
 public:
-    typedef base<voxelType> t_base;
+    typedef base<configType> t_base;
 
     typedef vector3int32map<typename t_base::t_utilsTile> t_tilesMap;
 
@@ -51,7 +51,7 @@ public:
     /**
      * @brief ~inMemory descructor
      */
-    virtual ~inMemory()
+    ~inMemory()
     {
     #ifdef BLUB_LOG_VOXEL
         blub::BOUT("inMemory::~inMemory()");
@@ -164,8 +164,6 @@ protected:
 #ifdef BLUB_LOG_VOXEL
         blub::BOUT("inMemory::setTileToFullMaster id:" + blub::string::number(id));
 #endif
-        BASSERT(!t_base::tryLockForEditMaster());
-
         const typename t_base::t_utilsTile holder(utils::tileState::full);
         setTileMaster(id, holder);
     }
@@ -174,8 +172,6 @@ protected:
 #ifdef BLUB_LOG_VOXEL
         blub::BOUT("inMemory::setTileToEmtpyMaster id:" + blub::string::number(id));
 #endif
-        BASSERT(!t_base::tryLockForEditMaster());
-
         const typename t_base::t_utilsTile holder(utils::tileState::empty);
         setTileMaster(id, holder);
     }
@@ -255,8 +251,6 @@ protected:
     void serialize(formatType & readWrite, const uint32& version)
     {
         using namespace serialization;
-
-        (void)version;
 
         saveLoad(readWrite, *this, version);
     }

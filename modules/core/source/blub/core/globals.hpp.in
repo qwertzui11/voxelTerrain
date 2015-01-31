@@ -14,22 +14,34 @@
 #cmakedefine BLUB_BUILD_WEB
 
 #cmakedefine BLUB_USE_ASSIMP
-#cmakedefine BLUB_USE_BULLET
+#cmakedefine BLUB_USE_BULLET2
+#cmakedefine BLUB_USE_BULLET3
 #cmakedefine BLUB_USE_CEF3
 #cmakedefine BLUB_USE_OGRE3D
 #cmakedefine BLUB_USE_OIS
 #cmakedefine BLUB_USE_PHYSX
 #cmakedefine BLUB_USE_SOCI
+#cmakedefine BLUB_USE_WEBSOCKETPP
+#cmakedefine BLUB_USE_OPENSSL
+
+#cmakedefine BLUB_DATABASE_SQLITE3
+#cmakedefine BLUB_DATABASE_POSTGRESQL
 
 #ifndef BLUB_USE_OGRE3D
 #    define BLUB_NO_OGRE3D
 #endif
-#ifndef BLUB_USE_BULLET
-#    define BLUB_NO_BULLET
+
+#if !defined BLUB_USE_BULLET2 && !defined BLUB_USE_BULLET3
+#   define BLUB_NO_BULLET
 #endif
-#ifndef BLUB_USE_CEF3
+#if defined BLUB_USE_BULLET3 || defined BLUB_USE_BULLET2
+#   define BLUB_USE_BULLET
+#endif
+
+#if !defined BLUB_USE_CEF3
 #    define BLUB_NO_CEF3
 #endif
+
 #include <boost/predef/os/linux.h>
 #include <boost/predef/os/windows.h>
 #if BOOST_OS_LINUX
@@ -39,10 +51,13 @@
 #   define BLUB_WINDOWS
 #endif
 
+//#define BLUB_LOG_LOCATION
 //#define BLUB_LOG_VOXEL
 // #define BLUB_LOG_UDP
 // #define BLUB_LOG_TCP
 #define BLUB_LOG_PROCEDURAL_VOXEL_EDIT_MESH
+#define BLUB_LOG_WEB_OFFSCREEN
+//#define BLUB_LOG_NETWORK_WEBSOCKETPP_DEVEL
 
 #ifndef NDEBUG
 #   define BLUB_DEBUG
@@ -87,7 +102,10 @@ namespace boost {
 }
 class portable_binary_iarchive;
 class portable_binary_oarchive;
-
+namespace std
+{
+    template<class T> class weak_ptr;
+}
 
 namespace blub
 {
@@ -112,15 +130,15 @@ namespace blub
 
     template <class T, std::size_t N>
     class array;
-    class axisAlignedBox;
-    class axisAlignedBoxInt32;
-    template <class vector3Type>
-    class axisAlignedBoxTemplate;
     class byteArray;
-    class colour;
     template<typename elementType>
     class deque;
-    template <class key>
+    template <typename classType>
+    class enableSharedFromThis;
+    template <class Key,
+              class Hash = boost::hash<Key>,
+              class KeyEqual = std::equal_to<Key>,
+              class Allocator = std::allocator<Key> >
     class hashList;
     template <class S,
               class T,
@@ -128,7 +146,11 @@ namespace blub
               class P = std::equal_to<S>,
               class A = std::allocator<std::pair<const S, T> > >
     class hashMap;
-    template <class S, class T, class H, class P, class A>
+    template <class S,
+              class T,
+              class H = boost::hash<S>,
+              class P = std::equal_to<S>,
+              class A = std::allocator<std::pair<const S, T> > >
     class hashMapMulti;
     template <typename idType>
     class idCreator;
@@ -141,40 +163,18 @@ namespace blub
     class ownsOwnSharedPointer;
     template <typename first, typename second>
     class pair;
-    class plane;
-    class quaternion;
-    class rectangle;
     template <typename T>
     class sharedPointer;
     template <typename T>
     class signal;
-    class sphere;
     typedef std::istream iStream;
     typedef std::ostream oStream;
     class string;
     class timer;
-    class transform;
-    class triangle;
-    class triangleVector3;
     template <typename T>
     class vector;
-    class vector2;
-
-    template <typename valueType, valueType valueDefault = 0>
-    class vector2Template;
-
-    typedef vector2Template<int32, 0> vector2int32;
-
-    class vector3;
-
-    template <typename valueType, valueType valueDefault = 0>
-    class vector3Template;
-
-    typedef vector3Template<int32, 0> vector3int32;
-    typedef vector3Template<uint8, 0> vector3uint8;
-
-    template <typename T>
-    class weakPointer;
+    template <class T>
+    using weakPointer = std::weak_ptr<T>;
 
     namespace ai {
         class aStar;
@@ -205,37 +205,6 @@ namespace blub
         class client;
 
     }
-    namespace network {
-        class connection;
-
-        namespace block {
-            class reader;
-            class writer;
-        }
-        namespace ip {
-            namespace tcp {
-                class acceptor;
-                class connector;
-                class connection;
-            }
-            namespace udp {
-                typedef boost::asio::ip::basic_endpoint<boost::asio::ip::udp> endpoint;
-                class resolver;
-                class socket;
-            }
-        }
-        namespace package {
-            template <typename packageIdentifierType>
-            class container;
-
-            template <class packageType>
-            class reader;
-            class writer;
-        }
-        namespace serial {
-            class connection;
-        }
-    }
     namespace octree {
         template<typename S>
         class container;
@@ -247,7 +216,7 @@ namespace blub
 
         namespace format {
             namespace binary {
-                //typedef boost::archive::binary_iarchive input;
+                //typedef boost::archive::binary_iarchive input; // watchout! no float/double compatibiltiy
                 //typedef boost::archive::binary_oarchive output;
                 typedef portable_binary_iarchive input;
                 typedef portable_binary_oarchive output;

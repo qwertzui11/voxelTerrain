@@ -26,24 +26,23 @@ namespace simple
 /**
  * @brief The surface class convertes accessor-tiles to surface-tiles. In between polygons get calculated by the surface-tile.
  */
-template <class voxelType>
-class surface : public base<sharedPointer<tile::surface<voxelType> > >
+template <class configType>
+class surface : public base<typename configType::t_surface::t_tile>
 {
 public:
-    typedef tile::surface<voxelType> t_tile;
+    typedef configType t_config;
+    typedef typename t_config::t_surface::t_tile t_tile;
     typedef sharedPointer<t_tile> t_tilePtr;
-    typedef base<t_tilePtr> t_base;
+    typedef base<t_tile> t_base;
 
     typedef typename t_base::t_tileId t_tileId;
 
     typedef hashMap<t_tileId, t_tilePtr> t_tilesMap;
     typedef hashList<vector3int32> t_tileIdList;
 
-    typedef tile::container<voxelType> t_tileContainer;
-
-    typedef tile::accessor<voxelType> t_tileAccessor;
+    typedef typename t_config::t_accessor::t_tile t_tileAccessor;
     typedef sharedPointer<t_tileAccessor> t_tileAccessorPtr;
-    typedef base<t_tileAccessorPtr> t_voxelAccessor;
+    typedef base<t_tileAccessor> t_voxelAccessor;
 
 
     /**
@@ -67,7 +66,7 @@ public:
     /**
      * @brief ~surface destructor.
      */
-    virtual ~surface()
+    ~surface()
     {
         ;
     }
@@ -227,7 +226,7 @@ protected:
             if (it != m_tiles.cend())
             {
                 t_base::addToChangeList(id, nullptr);
-                m_tiles.erase_return_void(it);
+                m_tiles.erase(it);
             }
         }
         else

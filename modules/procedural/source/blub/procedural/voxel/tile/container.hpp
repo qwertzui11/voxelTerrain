@@ -3,6 +3,7 @@
 
 #include "blub/core/array.hpp"
 #include "blub/core/classVersion.hpp"
+#include "blub/core/vector.hpp"
 #include "blub/math/axisAlignedBoxInt32.hpp"
 #include "blub/math/vector3int.hpp"
 #include "blub/procedural/voxel/tile/base.hpp"
@@ -25,18 +26,19 @@ namespace tile
  * The class counts how many voxel are max and how many are min. if all voxel are min or max the class simple::container::base doesnt save them.
  * Additionally it saves an axisAlignedBox which describes the bounds of the voxel that changed.
  */
-template <class voxelType>
-class container : public base<container<voxelType> >
+template <class configType>
+class container : public base<container<configType> >
 {
 public:
-    typedef base<container<voxelType> > t_base;
-    typedef voxelType t_data;
+    typedef configType t_config;
+    typedef base<container<t_config> > t_base;
+    typedef typename t_config::t_data t_data;
 
 #if defined(BOOST_NO_CXX11_CONSTEXPR)
     static const int32 voxelLength;
     static const int32 voxelCount;
 #else
-    static constexpr int32 voxelLength = 24;
+    static constexpr int32 voxelLength = t_config::voxelsPerTile;
     static constexpr int32 voxelCount = voxelLength*voxelLength*voxelLength;
 #endif
  
@@ -99,7 +101,7 @@ public:
      * @param toSet
      * @see procedural::voxel::data
      */
-    void setVoxel(const vector3int32& pos, const voxelType& toSet)
+    void setVoxel(const vector3int32& pos, const t_data& toSet)
     {
         if(setVoxel(calculateIndex(pos), toSet))
         {
@@ -107,7 +109,7 @@ public:
         }
     }
     // TODO remove me - do lambda / boost/std::function
-    void setVoxelIfInterpolationHigher(const vector3int32& pos, const voxelType& toSet)
+    void setVoxelIfInterpolationHigher(const vector3int32& pos, const t_data& toSet)
     {
         if(setVoxelIfInterpolationHigher(calculateIndex(pos), toSet))
         {
@@ -115,7 +117,7 @@ public:
         }
     }
     // TODO remove me - do lambda / boost/std::function
-    void setVoxelIfInterpolationHigherEqualZero(const vector3int32& pos, const voxelType& toSet)
+    void setVoxelIfInterpolationHigherEqualZero(const vector3int32& pos, const t_data& toSet)
     {
         if(setVoxelIfInterpolationHigherEqualZero(calculateIndex(pos), toSet))
         {
@@ -123,7 +125,7 @@ public:
         }
     }
     // TODO remove me - do lambda / boost/std::function
-    void setVoxelIfInterpolationLower(const vector3int32& pos, const voxelType& toSet)
+    void setVoxelIfInterpolationLower(const vector3int32& pos, const t_data& toSet)
     {
         if(setVoxelIfInterpolationLower(calculateIndex(pos), toSet))
         {
@@ -169,7 +171,7 @@ public:
      * @param pos local voxel-position.
      * @return
      */
-    voxelType getVoxel(const vector3int32& pos) const
+    t_data getVoxel(const vector3int32& pos) const
     {
         return getVoxel(calculateIndex(pos));
     }
@@ -179,7 +181,7 @@ public:
      * @return
      * @see calculateIndex()
      */
-    const voxelType& getVoxel(const int32& index) const
+    const t_data& getVoxel(const int32& index) const
     {
         BASSERT(index >= 0);
         BASSERT(index < voxelCount);
@@ -291,7 +293,7 @@ protected:
     }
 
     // TODO remove me - do lambda / boost/std::function
-    bool setVoxelIfInterpolationHigher(const int32& index, const voxelType& toSet)
+    bool setVoxelIfInterpolationHigher(const int32& index, const t_data& toSet)
     {
         BASSERT(m_editing);
         BASSERT(index >= 0);
@@ -306,7 +308,7 @@ protected:
     }
 
     // TODO remove me - do lambda / boost/std::function
-    bool setVoxelIfInterpolationHigherEqualZero(const int32& index, const voxelType& toSet)
+    bool setVoxelIfInterpolationHigherEqualZero(const int32& index, const t_data& toSet)
     {
         BASSERT(m_editing);
         BASSERT(index >= 0);
@@ -321,7 +323,7 @@ protected:
     }
 
     // TODO remove me - do lambda / boost/std::function
-    bool setVoxelIfInterpolationLower(const int32& index, const voxelType& toSet)
+    bool setVoxelIfInterpolationLower(const int32& index, const t_data& toSet)
     {
         BASSERT(m_editing);
         BASSERT(index >= 0);
@@ -343,13 +345,13 @@ protected:
      * @see calculateIndex()
      * @see procedural::voxel::data
      */
-    bool setVoxel(const int32& index, const voxelType& toSet)
+    bool setVoxel(const int32& index, const t_data& toSet)
     {
         BASSERT(m_editing);
         BASSERT(index >= 0);
         BASSERT(index < voxelCount);
 
-        const voxelType& currentVoxel(getVoxel(index));
+        const t_data& currentVoxel(getVoxel(index));
 
         if (currentVoxel == toSet)
         {
@@ -430,7 +432,7 @@ private:
 
 #if defined(BOOST_NO_CXX11_CONSTEXPR)
 template <class voxelType>
-const int32 container<voxelType>::voxelLength = 24;
+const int32 container<voxelType>::voxelLength = t_config::voxelsPerTile;
 template <class voxelType>
 const int32 container<voxelType>::voxelCount = voxelLength*voxelLength*voxelLength;
 #else

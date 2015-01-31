@@ -1,5 +1,5 @@
-#ifndef DEADLINETIMER_HPP
-#define DEADLINETIMER_HPP
+#ifndef BLUB_CORE_DEADLINETIMER_HPP
+#define BLUB_CORE_DEADLINETIMER_HPP
 
 #include "blub/async/predecl.hpp"
 #include "blub/core/globals.hpp"
@@ -16,18 +16,22 @@ namespace async
 class deadlineTimer
 {
 public:
-    deadlineTimer(dispatcher* listener);
+    deadlineTimer(dispatcher& listener);
 
     template<typename CompletionHandler>
     void addToDoOnTimeoutMilli(CompletionHandler handler, const uint32& milli)
     {
-        BASSERT(m_listener != nullptr);
         m_timer.expires_from_now(boost::posix_time::millisec(milli));
         m_timer.async_wait(handler);
     }
 
+    void cancel()
+    {
+        m_timer.cancel();
+    }
+
 protected:
-    dispatcher* m_listener;
+    dispatcher& m_listener;
     boost::asio::deadline_timer m_timer;
 
 };
@@ -37,4 +41,4 @@ protected:
 }
 
 
-#endif // DEADLINETIMER_HPP
+#endif // BLUB_CORE_DEADLINETIMER_HPP

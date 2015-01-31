@@ -4,6 +4,7 @@
 #include "blub/async/predecl.hpp"
 #include "blub/core/globals.hpp"
 #include "blub/core/noncopyable.hpp"
+#include "blub/core/scopedPtr.hpp"
 #include "blub/core/vector.hpp"
 #include "blub/procedural/predecl.hpp"
 #include "blub/procedural/voxel/simple/base.hpp"
@@ -25,13 +26,14 @@ namespace terrain
  * @brief The base class gets derived by every class in the namesapce terrain.
  * It holds various level of details, always of type procedural::voxel::simple::base.
  */
-template <class tileType>
+template <class simpleType>
 class base : public noncopyable
 {
 public:
-    typedef tileType t_tile;
-    typedef procedural::voxel::simple::base<t_tile>* t_lod;
-    typedef vector<t_lod> t_lodList;
+    typedef simpleType t_simple;
+    typedef t_simple* t_lod;
+    typedef vector<scopedPointer<t_simple> > t_lodList;
+    typedef typename t_simple::t_createTileCallback t_createTileCallback;
 
     /**
      * @brief base contructor
@@ -40,7 +42,7 @@ public:
     /**
      * @brief ~base destructor
      */
-    virtual ~base();
+    ~base();
 
     /**
      * @brief getLod returns a level of detail.
@@ -60,7 +62,6 @@ public:
      */
     int32 getNumLod() const;
 
-    typedef typename simple::base<t_tile>::t_createTileCallback t_createTileCallback;
     /**
      * @brief setCreateTileCallback sets the callback for creating tiles to the lods.
      * @param toSet
@@ -93,7 +94,7 @@ template <class tileType>
 typename base<tileType>::t_lod base<tileType>::getLod(const uint16 &lod) const
 {
     BASSERT(lod < m_lods.size());
-    return m_lods[lod];
+    return m_lods[lod].get();
 }
 
 template <class tileType>
@@ -111,7 +112,7 @@ int32 base<tileType>::getNumLod() const
 template <class tileType>
 void base<tileType>::setCreateTileCallback(const t_createTileCallback &toSet)
 {
-    for (t_lod &lod : m_lods)
+    for (typename t_lodList::value_type &lod : m_lods)
     {
         lod->setCreateTileCallback(toSet);
     }

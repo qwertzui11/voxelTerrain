@@ -1,5 +1,5 @@
-#ifndef VOXEL_DATA_HPP
-#define VOXEL_DATA_HPP
+#ifndef BLUB_PROCEDURAL_VOXEL_DATA_HPP
+#define BLUB_PROCEDURAL_VOXEL_DATA_HPP
 
 #include "blub/core/classVersion.hpp"
 #include "blub/core/globals.hpp"
@@ -160,4 +160,4 @@ protected:
 }
 
 
-#endif // VOXEL_DATA_HPP
+#endif // BLUB_PROCEDURAL_VOXEL_DATA_HPP

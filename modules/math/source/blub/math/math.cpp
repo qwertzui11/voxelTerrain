@@ -1,5 +1,7 @@
 #include "math.hpp"
 
+#include <cstdlib>
+
 
 using namespace blub;
 
@@ -66,5 +68,15 @@ int32 math::pow(const int32 &number, const int32 &expo)
 real math::pow(const real &number, const real &expo)
 {
     return std::pow(number, expo);
+}
+
+uint32 math::rand()
+{
+    return std::rand();
+}
+
+real math::randReal()
+{
+    return real(rand()) / real(RAND_MAX);
 }
 

@@ -29,19 +29,22 @@ namespace tile
  * If you got a custom voxel, that effects the resulting surface derive this class and reimplement vertexGotCreated() and vertexGotCreatedLod().
  * Private methods are undocumentated because they simply implement the code described in Eric Lengyel’s Dissertation.
  */
-template <class voxelType>
-class surface : public base<surface<voxelType> >
+template <class configType>
+class surface : public base<surface<configType> >
 {
 public:
-    typedef base<surface<voxelType> > t_base;
-    typedef accessor<voxelType> t_voxelAccessor;
+    typedef configType t_config;
+    typedef base<surface<t_config> > t_base;
+    typedef typename t_config::t_surface::t_tile* t_thiz;
+    typedef typename t_config::t_accessor::t_tile t_voxelAccessor;
     typedef sharedPointer<t_voxelAccessor> t_voxelAccessorPtr;
-    typedef vector<vector3> t_positionsList;
-    typedef vector<vector3> t_normalsList;
-    typedef vector<uint16> t_indicesList;
+    typedef vector<typename t_config::t_vertex> t_vertices;
+    typedef vector<typename t_config::t_index> t_indices;
+    typedef typename t_config::t_data t_voxel;
+    typedef typename t_config::t_vertex t_vertex;
 
-    typedef array<voxelType, 2*2*2> t_calcVoxel;
-    typedef array<voxelType, 3*3*3+2*2> t_calcVoxelLod;
+    typedef array<t_voxel, 2*2*2> t_calcVoxel;
+    typedef array<t_voxel, 3*3*3+2*2> t_calcVoxelLod;
 
     /**
      * @brief create creates an instance.
@@ -59,22 +62,13 @@ public:
      */
     static typename t_base::pointer createCopy(typename t_base::pointer toCopy)
     {
-        typename t_base::pointer result(create());
-        result->m_voxel = toCopy->m_voxel;
-        result->m_lod = toCopy->m_lod;
-        result->m_positions = toCopy->m_positions;
-        result->m_normals = toCopy->m_normals;
-        result->m_indices = toCopy->m_indices;
-        for (uint16 ind = 0; ind < 6; ++ind)
-        {
-            result->m_indicesLod[ind] = toCopy->m_indicesLod[ind];
-        }
+        typename t_base::pointer result(new surface(*toCopy.get()));
         return result;
     }
     /**
      * @brief ~surface desctructor
      */
-    virtual ~surface()
+    ~surface()
     {
 #ifdef BLUB_LOG_VOXEL_SURFACE
         blub::BOUT("surface::~surface()");
@@ -97,20 +91,20 @@ public:
         blub::BOUT("surface::calculateSurface(..) lod:" + blub::string::number(lod));
 #endif
 
-        clear();
+
+        static_cast<t_thiz>(this)->clear();
 
         m_voxel = voxel;
         m_lod = lod;
 
-        m_positions.reserve(1000);
-        m_normals.reserve(1000);
+        m_vertices.reserve(1000);
         m_indices.reserve(2000);
 
         const vector3int32 voxelStart(-1);
         const vector3int32 voxelEnd(t_voxelAccessor::voxelLength+2);
 
         const int32 vertexIndicesReuseSize(((voxelEnd.x-voxelStart.x)*3)*((voxelEnd.y-voxelStart.y)*3)*((voxelEnd.z-voxelStart.z)*3));
-            // the indexer for the vertices. *3 because gets saved with edge-id
+        // the indexer for the vertices. *3 because gets saved with edge-id
         int32 *vertexIndicesReuse = new int32[vertexIndicesReuseSize];
         for (int32 index = 0; index < vertexIndicesReuseSize; ++index)
         {
@@ -142,8 +136,8 @@ public:
                     uint16 toAddToTableIndex(1);
                     for (uint16 indCheck = 0; indCheck < 8; ++indCheck)
                     {
-                        voxelCalc[indCheck] = getVoxel(posVoxel + toCheck[indCheck]); // <-- acc to valgrind getVoxel needs 85% of calculationTime;
-                        if (voxelCalc[indCheck].getInterpolation() < isoLevel)
+                        voxelCalc[indCheck] = getVoxel(posVoxel + toCheck[indCheck]); // <-- acc to valgrind getVoxel is the most expensivec call;
+                        if (voxelCalc[indCheck].getInterpolation() < isoLevel) // OPTIMISE reuse "voxelCalc", instead of calling getVoxel 2 times later!
                         {
                             tableIndex |= toAddToTableIndex;
                         }
@@ -152,68 +146,69 @@ public:
 
                     // Now create a triangulation of the isosurface in this
                     // cell.
-                    if (tableIndex != 0 && tableIndex != 255)
+                    if (tableIndex == 0 || tableIndex == 255)
                     {
-                        bool calculateFaces(true);
-                        if (calculateNormalCorrection)
-                        {
-                            calculateFaces = (posVoxel >= vector3int32(0) && posVoxel < voxelEnd - vector3int32(2));
-                        }
-                        // OPTIMISE: too many vertices get calculated because of normalcorrection; optimise!
-                        const RegularCellData *data = &regularCellData[regularCellClass[tableIndex]];
-                        int32 ids[12];
-                        for (int32 ind = 0; ind < data->GetVertexCount(); ++ind)
-                        {
-                            int32 data2 = regularVertexData[tableIndex][ind];
-                            int32 corner0 = data2 & 0x0F;
-                            int32 corner1 = (data2 & 0xF0) >> 4;
-                            int32 id = calculateEdgeId(posVoxel, data2 >> 8); // for reuse
-                            BASSERT(id >= 0);
-                            BASSERT(id < vertexIndicesReuseSize);
+                        continue;
+                    }
+                    bool calculateFaces(true);
+                    if (calculateNormalCorrection)
+                    {
+                        calculateFaces = (posVoxel >= vector3int32(0) && posVoxel < voxelEnd - vector3int32(2));
+                    }
+                    // OPTIMISE: too many vertices get calculated because of normalcorrection; optimise!
+                    const RegularCellData *data = &regularCellData[regularCellClass[tableIndex]];
+                    int32 ids[12];
+                    for (int32 ind = 0; ind < data->GetVertexCount(); ++ind)
+                    {
+                        int32 data2 = regularVertexData[tableIndex][ind];
+                        int32 corner0 = data2 & 0x0F;
+                        int32 corner1 = (data2 & 0xF0) >> 4;
+                        int32 id = calculateEdgeId(posVoxel, data2 >> 8); // for reuse
+                        BASSERT(id >= 0);
+                        BASSERT(id < vertexIndicesReuseSize);
 
-                            if (vertexIndicesReuse[id] == -1)
-                            {
-                                vector3 point = calculateIntersectionPosition(posVoxel, corner0, corner1);
-                                // we calucluate here everything in positive values; but normal correction starts @ -1
-                                point *= voxelSize;
-                                vertexGotCreated(posVoxel, voxelCalc, point);
-                                m_positions.push_back(point);
-                                m_normals.push_back(vector3());
-                                BASSERT(m_positions.size() == m_normals.size());
-                                ids[ind] = vertexIndicesReuse[id] = m_positions.size()-1;
-                            }
-                            else
-                            {
-                                ids[ind] = vertexIndicesReuse[id];
-                            }
-                        }
-                        for (int32 ind = 0; ind < data->GetTriangleCount()*3; ind+=3)
+                        if (vertexIndicesReuse[id] == -1)
                         {
-                            // calc normal
-                            const int32 vertexIndex0(ids[data->vertexIndex[ind+0]]);
-                            const int32 vertexIndex1(ids[data->vertexIndex[ind+1]]);
-                            const int32 vertexIndex2(ids[data->vertexIndex[ind+2]]);
-                            const vector3 vertex0(m_positions.at(vertexIndex0));
-                            const vector3 vertex1(m_positions.at(vertexIndex1));
-                            const vector3 vertex2(m_positions.at(vertexIndex2));
-                            if (vertex0 == vertex1 || vertex0 == vertex2 || vertex1 == vertex2)
-                            {
-                                continue; // triangle with zero space
-                            }
-                            const vector3 addNormal = (vertex1 - vertex0).crossProduct(vertex2 - vertex0);//.normalisedCopy();
-                            // if (calculateFaces) // for normal-correction-test
-                            {
-                                m_normals.at(vertexIndex0) += addNormal;
-                                m_normals.at(vertexIndex1) += addNormal;
-                                m_normals.at(vertexIndex2) += addNormal;
-                            }
-                            if (calculateFaces)
-                            {
-                                // insert new triangle
-                                m_indices.push_back(vertexIndex0);
-                                m_indices.push_back(vertexIndex1);
-                                m_indices.push_back(vertexIndex2);
-                            }
+                            vector3 point = calculateIntersectionPosition(posVoxel, corner0, corner1); // OPTIMISE so dirty - use voxelCalc inside the method!
+                            // we calucluate here everything in positive values; but normal correction starts @ -1
+                            point *= voxelSize;
+                            t_voxel voxel0 = getVoxel(posVoxel + calculateCorner(corner0)); // OPTIMISE so dirty - use voxelCalc!
+                            t_voxel voxel1 = getVoxel(posVoxel + calculateCorner(corner1));
+                            const t_vertex vertex(static_cast<t_thiz>(this)->createVertex(posVoxel, voxel0, voxel1, point, vector3()));
+                            m_vertices.push_back(vertex);
+                            ids[ind] = vertexIndicesReuse[id] = m_vertices.size()-1;
+                        }
+                        else
+                        {
+                            ids[ind] = vertexIndicesReuse[id];
+                        }
+                    }
+                    for (int32 ind = 0; ind < data->GetTriangleCount()*3; ind+=3)
+                    {
+                        // calc triangle and normal
+                        const int32 vertexIndex0(ids[data->vertexIndex[ind+0]]);
+                        const int32 vertexIndex1(ids[data->vertexIndex[ind+1]]);
+                        const int32 vertexIndex2(ids[data->vertexIndex[ind+2]]);
+                        const vector3 vertex0(m_vertices.at(vertexIndex0).position);
+                        const vector3 vertex1(m_vertices.at(vertexIndex1).position);
+                        const vector3 vertex2(m_vertices.at(vertexIndex2).position);
+                        if (vertex0 == vertex1 || vertex0 == vertex2 || vertex1 == vertex2)
+                        {
+                            continue; // triangle with zero space
+                        }
+                        const vector3 addNormal = (vertex1 - vertex0).crossProduct(vertex2 - vertex0);//.normalisedCopy();
+                        // if (calculateFaces) // for normal-correction-test
+                        {
+                            m_vertices.at(vertexIndex0).normal += addNormal;
+                            m_vertices.at(vertexIndex1).normal += addNormal;
+                            m_vertices.at(vertexIndex2).normal += addNormal;
+                        }
+                        if (calculateFaces)
+                        {
+                            // insert new triangle
+                            m_indices.push_back(vertexIndex0);
+                            m_indices.push_back(vertexIndex1);
+                            m_indices.push_back(vertexIndex2);
                         }
                     }
                 }
@@ -367,7 +362,7 @@ public:
 
                                         ids[ind]=vertexIndicesReuse[id];
 
-                                        const vector3& normal(m_normals.at(ids[ind]));
+                                        const vector3& normal(m_vertices.at(ids[ind]).normal);
                                         switch (edgeBetween)
                                         {
                                         case 0x9A:
@@ -417,45 +412,48 @@ public:
 
                                             point *= voxelSize;
 
-                                            //blub::BOUT("doing new transvoxel-vertex: resultPosition:" + blub::string::number(point));
-                                            vertexGotCreatedLod(voxelPos, voxelCalc, point);
-                                            m_positions.push_back(point);
+                                            vector3 normal;
+
                                             switch (edgeBetween)
                                             {
                                             case 0x01:
                                             case 0x12:
-                                                m_normals.push_back(normalsForTransvoxel[0]);
+                                                normal = normalsForTransvoxel[0];
                                                 break;
                                             case 0x03:
                                             case 0x36:
-                                                m_normals.push_back(normalsForTransvoxel[3]);
+                                                normal = normalsForTransvoxel[3];
                                                 break;
                                             case 0x25:
                                             case 0x58:
-                                                m_normals.push_back(normalsForTransvoxel[1]);
+                                                normal = normalsForTransvoxel[1];
                                                 break;
                                             case 0x67:
                                             case 0x78:
-                                                m_normals.push_back(normalsForTransvoxel[2]);
+                                                normal = normalsForTransvoxel[2];
                                                 break;
                                             case 0x34:
                                             case 0x14:
                                             case 0x45:
                                             case 0x47:
-                                                m_normals.push_back(normalsForTransvoxel[0] + normalsForTransvoxel[1] + normalsForTransvoxel[2] + normalsForTransvoxel[3]);
+                                                normal = normalsForTransvoxel[0] + normalsForTransvoxel[1] + normalsForTransvoxel[2] + normalsForTransvoxel[3];
                                                 break;
                                             default:
                                                 BASSERT(false);
                                             }
-                                            BASSERT(m_positions.size() == m_normals.size());
+
+                                            t_voxel voxel0 = getVoxelLod(voxelPos-start + calculateCornerTransvoxel(corner0, voxelLookups[coord]), lod); // OPTIMISE so dirty - use voxelCalc!
+                                            t_voxel voxel1 = getVoxelLod(voxelPos-start + calculateCornerTransvoxel(corner1, voxelLookups[coord]), lod);
+                                            const t_vertex vertex(static_cast<t_thiz>(this)->createVertexLod(voxelPos, voxel0, voxel1, point, normal));
+                                            m_vertices.push_back(vertex);
 
                                             if (id == -1)
                                             {
-                                                ids[ind] = m_positions.size()-1;
+                                                ids[ind] = m_vertices.size()-1;
                                             }
                                             else
                                             {
-                                                ids[ind] = vertexIndicesReuseLod[id] = m_positions.size()-1;
+                                                ids[ind] = vertexIndicesReuseLod[id] = m_vertices.size()-1;
                                             }
                                         }
                                         else
@@ -466,13 +464,13 @@ public:
                                 }
                                 for (uint16 ind = 0; ind < data->GetTriangleCount()*3; ind+=3)
                                 {
-                                    // calc normal
+                                    // calc triangle
                                     const int32 vertexIndex0(ids[data->vertexIndex[ind+0]]);
                                     const int32 vertexIndex1(ids[data->vertexIndex[ind+1]]);
                                     const int32 vertexIndex2(ids[data->vertexIndex[ind+2]]);
-                                    const vector3 vertex0(m_positions.at(vertexIndex0));
-                                    const vector3 vertex1(m_positions.at(vertexIndex1));
-                                    const vector3 vertex2(m_positions.at(vertexIndex2));
+                                    const vector3 vertex0(m_vertices.at(vertexIndex0).position);
+                                    const vector3 vertex1(m_vertices.at(vertexIndex1).position);
+                                    const vector3 vertex2(m_vertices.at(vertexIndex2).position);
                                     if (vertex0 == vertex1 || vertex1 == vertex2 || vertex0 == vertex2)
                                     {
                                         continue; // triangle with zero space
@@ -505,9 +503,9 @@ public:
         delete [] vertexIndicesReuse;
 
         // normalise normals
-        for (uint32 ind = 0; ind < m_normals.size(); ++ind)
+        for (t_vertex& workVertex : m_vertices)
         {
-            m_normals.at(ind).normalise();
+            workVertex.normal.normalise();
         }
 
 #ifdef BLUB_LOG_VOXEL_SURFACE
@@ -518,10 +516,9 @@ public:
     /**
      * @brief clear erases all buffer/results.
      */
-    virtual void clear()
+    void clear()
     {
-        m_positions.clear();
-        m_normals.clear();
+        m_vertices.clear();
         m_indices.clear();
         for (int32 lod = 0; lod < 6; ++lod)
         {
@@ -551,23 +548,15 @@ public:
      * @brief getPositions returns resulting position-list.
      * @return
      */
-    const t_positionsList& getPositions() const
+    const t_vertices& getVertices() const
     {
-        return m_positions;
+        return m_vertices;
     }
     /**
-     * @brief getPositions returns resulting normal-list.
+     * @brief getIndices returns resulting index-list.
      * @return
      */
-    const t_normalsList& getNormals() const
-    {
-        return m_normals;
-    }
-    /**
-     * @brief getPositions returns resulting index-list.
-     * @return
-     */
-    const t_indicesList& getIndices() const
+    const t_indices& getIndices() const
     {
         return m_indices;
     }
@@ -575,7 +564,7 @@ public:
      * @brief getPositions returns resulting transvoxel-list. Vertices for these indices are in getPositions() and getNormals().
      * @return
      */
-    const t_indicesList& getIndicesLod(const uint16& lod) const
+    const t_indices& getIndicesLod(const uint16& lod) const
     {
         BASSERT(lod < 6);
         return m_indicesLod[lod];
@@ -590,23 +579,29 @@ protected:
     }
 
     /**
-     * @brief If you got a custom voxel, that effects the resulting surface derive this class and reimplement vertexGotCreated() and vertexGotCreatedLod().
+     * @brief Creates a vertex
      */
-    virtual void vertexGotCreated(const vector3int32& /*voxelPos*/, const t_calcVoxel &/*voxel*/, vector3 &/*position*/)
+    t_vertex createVertex(const vector3int32& /*voxelPos*/, const t_voxel &/*voxel0*/, const t_voxel &/*voxel1*/, const vector3 &position, const vector3 &normal)
     {
-        ;
+        t_vertex result;
+        result.position = position;
+        result.normal = normal;
+        return result;
     }
 
     /**
-     * @brief If you got a custom voxel, that effects the resulting surface derive this class and reimplement vertexGotCreated() and vertexGotCreatedLod().
+     * @brief Creates a vertex for lod
      */
-    virtual void vertexGotCreatedLod(const vector3int32& /*voxelPos*/, const t_calcVoxelLod &/*voxel*/, vector3 &/*position*/)
+    t_vertex createVertexLod(const vector3int32& /*voxelPos*/, const t_voxel &/*voxel0*/, const t_voxel &/*voxel1*/, const vector3 &position, const vector3 &normal)
     {
-        ;
+        t_vertex result;
+        result.position = position;
+        result.normal = normal;
+        return result;
     }
 
 private:
-    const voxelType &getVoxel(const vector3int32& pos) const
+    const t_voxel &getVoxel(const vector3int32& pos) const
     {
         return m_voxel->getVoxel(pos);
     }
@@ -614,7 +609,7 @@ private:
     {
         return getVoxel(pos).getInterpolation();
     }
-    const voxelType &getVoxelLod(const vector3int32& pos, const uint16 &lod) const
+    const t_voxel &getVoxelLod(const vector3int32& pos, const uint16 &lod) const
     {
         return m_voxel->getVoxelLod(pos, lod);
     }
@@ -779,10 +774,9 @@ protected:
     t_voxelAccessorPtr m_voxel;
     int32 m_lod;
 
-    t_positionsList m_positions;
-    t_normalsList m_normals;
-    t_indicesList m_indices;
-    t_indicesList m_indicesLod[6];
+    t_vertices m_vertices;
+    t_indices m_indices;
+    t_indices m_indicesLod[6];
 };
 
 

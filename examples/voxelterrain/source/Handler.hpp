@@ -1,8 +1,10 @@
 #include "blub/async/dispatcher.hpp"
 #include "blub/core/globals.hpp"
-#include "blub/core/log.hpp"
 #include "blub/core/sharedPointer.hpp"
 #include "blub/core/scopedPtr.hpp"
+#include "blub/log/global.hpp"
+#include "blub/math/quaternion.hpp"
+#include "blub/math/math.hpp"
 
 #include <OGRE/OgreCamera.h>
 #include <OGRE/OgreFrameListener.h>
@@ -36,6 +38,10 @@ public:
         , m_left(false)
         , m_right(false)
         , m_fast(false)
+        , m_lookLeft(false)
+        , m_lookRight(false)
+        , m_lookUp(false)
+        , m_lookDown(false)
     {
         ;
     }
@@ -57,7 +63,11 @@ public:
     bool initialiseOgre()
     {
         // initalise Ogre3d
-        renderSystem.reset(new Ogre::Root());
+#if defined BLUB_DEBUG
+        renderSystem.reset(new Ogre::Root("plugins_d.cfg"));
+#else
+        renderSystem.reset(new Ogre::Root("plugins.cfg"));
+#endif
         Ogre::LogManager::getSingleton().getDefaultLog()->setDebugOutputEnabled(true);
         if (!renderSystem->restoreConfig())
         {
@@ -110,8 +120,8 @@ public:
         pl.insert(std::make_pair(std::string("w32_keyboard"), std::string("DISCL_FOREGROUND")));
         pl.insert(std::make_pair(std::string("w32_keyboard"), std::string("DISCL_NONEXCLUSIVE")));
     #elif defined OIS_LINUX_PLATFORM
-        pl.insert(std::make_pair(std::string("x11_mouse_grab"), std::string("true")));
-        //pl.insert(std::make_pair(std::string("x11_mouse_grab"), std::string("false")));
+//        pl.insert(std::make_pair(std::string("x11_mouse_grab"), std::string("true")));
+        pl.insert(std::make_pair(std::string("x11_mouse_grab"), std::string("false")));
         pl.insert(std::make_pair(std::string("x11_mouse_hide"), std::string("true")));
         pl.insert(std::make_pair(std::string("x11_keyboard_grab"), std::string("false")));
         pl.insert(std::make_pair(std::string("XAutoRepeatOn"), std::string("true")));
@@ -166,6 +176,33 @@ public:
                 camera->moveRelative(Ogre::Vector3::UNIT_X*speed*evt.timeSinceLastFrame);
             }
         }
+        {
+            const blub::real lookSpeed = (blub::math::piHalf/2.) * evt.timeSinceLastFrame;
+            if (m_lookLeft)
+            {
+                m_lookVert += lookSpeed;
+            }
+            if (m_lookRight)
+            {
+                m_lookVert -= lookSpeed;
+            }
+            if (m_lookUp)
+            {
+                m_lookHor += lookSpeed;
+            }
+            if (m_lookDown)
+            {
+                m_lookHor -= lookSpeed;
+            }
+            m_lookHor = blub::math::clamp<blub::real>(m_lookHor, -blub::math::piHalf, blub::math::piHalf);
+
+            const blub::quaternion rotVert(0, blub::math::sin(m_lookVert / 2.0), 0, blub::math::cos(m_lookVert / 2.0));
+            const blub::quaternion rotHor(blub::math::sin(m_lookHor / 2.0), 0, 0, blub::math::cos(m_lookHor / 2.0));
+
+            blub::quaternion rot(rotVert*rotHor);
+
+            camera->setOrientation(rot);
+        }
 
         m_sigFrame(evt.timeSinceLastFrame);
         graphicDispatcher.start();
@@ -184,15 +221,6 @@ public:
     {
         m_lookHor += static_cast<blub::real>(arg.state.Y.rel) / -500.;
         m_lookVert += static_cast<blub::real>(arg.state.X.rel) / -500.;
-
-        m_lookHor = blub::math::clamp<blub::real>(m_lookHor, -blub::math::piHalf, blub::math::piHalf);
-
-        const blub::quaternion rotVert(0, blub::math::sin(m_lookVert / 2.0), 0, blub::math::cos(m_lookVert / 2.0));
-        const blub::quaternion rotHor(blub::math::sin(m_lookHor / 2.0), 0, 0, blub::math::cos(m_lookHor / 2.0));
-
-        blub::quaternion rot(rotVert*rotHor);
-
-        camera->setOrientation(rot);
 
         return true;
     }
@@ -261,16 +289,38 @@ public:
      */
     bool handleKeyPress(const OIS::KeyEvent &arg, const bool& pressed)
     {
-        if (arg.key == OIS::KC_W)
-        {m_forward = pressed;}
-        if (arg.key == OIS::KC_S)
-        {m_backwards = pressed;}
-        if (arg.key == OIS::KC_A)
-        {m_left = pressed;}
-        if (arg.key == OIS::KC_D)
-        {m_right = pressed;}
-        if (arg.key == OIS::KC_LSHIFT)
-        {m_fast = pressed;}
+        switch (arg.key)
+        {
+        case OIS::KC_W:
+            m_forward = pressed;
+            break;
+        case OIS::KC_S:
+            m_backwards = pressed;
+            break;
+        case OIS::KC_A:
+            m_left = pressed;
+            break;
+        case OIS::KC_D:
+            m_right = pressed;
+            break;
+        case OIS::KC_LSHIFT:
+            m_fast = pressed;
+            break;
+        case OIS::KC_LEFT:
+            m_lookLeft = pressed;
+            break;
+        case OIS::KC_RIGHT:
+            m_lookRight = pressed;
+            break;
+        case OIS::KC_UP:
+            m_lookUp = pressed;
+            break;
+        case OIS::KC_DOWN:
+            m_lookDown = pressed;
+            break;
+        default:
+            break;
+        }
 
         m_sigKeyGotPressed(arg, pressed);
 
@@ -303,6 +353,10 @@ protected:
     bool m_left;
     bool m_right;
     bool m_fast;
+    bool m_lookLeft;
+    bool m_lookRight;
+    bool m_lookUp;
+    bool m_lookDown;
 
     t_sigFrame m_sigFrame;
     t_sigKeyGotPressed m_sigKeyGotPressed;

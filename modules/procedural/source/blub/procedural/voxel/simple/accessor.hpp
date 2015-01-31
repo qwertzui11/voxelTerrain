@@ -32,24 +32,27 @@ namespace simple
  * It caches voxel optimized for the marching cubes algorithm.
  * If lod is larger 0 it addionally caches voxel for the transvoxel aalgorithm.
  */
-template <class voxelType>
-class accessor : public base<sharedPointer<tile::accessor<voxelType> > >
+template <class configType>
+class accessor : public base<typename configType::t_accessor::t_tile>
 {
 public:
-    typedef tile::accessor<voxelType> t_tile;
+    typedef configType t_config;
+    typedef typename t_config::t_accessor::t_tile t_tile;
     typedef sharedPointer<t_tile> t_tilePtr;
-    typedef base<t_tilePtr> t_base;
+    typedef base<t_tile> t_base;
+    typedef typename t_config::t_data t_voxel;
 
     typedef typename t_base::t_tileId t_tileId;
     typedef hashMap<vector3int32, t_tilePtr> t_tiles;
 
-    typedef sharedPointer<tile::container<voxelType> > t_tileContainerPtr;
+    typedef typename t_config::t_container::t_tile t_tileContainer;
+    typedef sharedPointer<t_tileContainer> t_tileContainerPtr;
     typedef hashList<vector3int32> t_tileIdList;
     typedef container::utils::tileState t_tileState;
-    typedef container::utils::tile<voxelType> t_tileHolder;
+    typedef container::utils::tile<t_tileContainer> t_tileHolder;
     typedef hashMap<t_tileId, t_tileHolder> t_tileHolderMap;
 
-    typedef container::base<voxelType> t_simpleContainerVoxel;
+    typedef typename t_config::t_container::t_simple t_simpleContainerVoxel;
 
 
     /**
@@ -76,7 +79,7 @@ public:
     /**
      * @brief ~accessor destructor
      */
-    virtual ~accessor()
+    ~accessor()
     {
 #ifdef BLUB_LOG_VOXEL
         blub::BOUT("accessor::~accessor()");
@@ -231,7 +234,7 @@ protected:
                             const vector3int32 pos(indX, indY, indZ);
                             const vector3int32 voxelPosAbs(voxelStart + pos*(m_voxelSkip/2));
 
-                            const voxelType result(getVoxelData(voxelPosAbs, /*lastUsedTileBounds, */lastUsedTiles));
+                            const t_voxel result(getVoxelData(voxelPosAbs, /*lastUsedTileBounds, */lastUsedTiles));
     #ifdef BLUB_DEBUG
                             if (indX % 2 == 0 &&
                                 indY % 2 == 0 &&
@@ -274,7 +277,7 @@ protected:
         {
             if (it != m_tiles.cend())
             {
-                m_tiles.erase_return_void(it);
+                m_tiles.erase(it);
                 t_base::addToChangeList(id, nullptr);
             }
         }
@@ -377,14 +380,14 @@ protected:
      * @param lastUsedTiles Last used container-tile.
      * @return Always a valid voxel. If not found a default-constructed voxel.
      */
-    voxelType getVoxelData(const vector3int32& voxelPosAbs, t_tileHolderMap& lastUsedTiles)
+    t_voxel getVoxelData(const vector3int32& voxelPosAbs, t_tileHolderMap& lastUsedTiles)
     {
         const vector3int32 &tilePos(m_voxels.calculateVoxelPosToTileId(voxelPosAbs));
         const vector3int32 &tilePosAbs(tilePos*vector3int32(t_tile::voxelLength));
 
         typename t_tileHolderMap::const_iterator it = lastUsedTiles.find(tilePos);
 
-        voxelType result;
+        t_voxel result;
         if (it != lastUsedTiles.cend())
         {
             const t_tileHolder &lastUsedTile(it->second);

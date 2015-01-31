@@ -2,7 +2,7 @@
 #define BLUB_PROCEDURAL_VOXEL_EDIT_SPHERE_HPP
 
 
-// #include "blub/core/log.hpp"
+// #include "blub/log/global.hpp"
 #include "blub/math/axisAlignedBox.hpp"
 #include "blub/math/math.hpp"
 #include "blub/math/sphere.hpp"
@@ -23,12 +23,14 @@ namespace edit
 /**
  * @brief The sphere class creates an interpolated voxel-sphere
  */
-template <class voxelType>
-class sphere : public base<voxelType>
+template <class configType>
+class sphere : public base<configType>
 {
 public:
-    typedef base<voxelType> t_base;
-    typedef sharedPointer<sphere<voxelType> > pointer;
+    typedef configType t_config;
+    typedef base<t_config> t_base;
+    typedef sharedPointer<sphere<t_config> > pointer;
+    typedef typename t_config::t_data t_voxel;
 
     /**
      * @brief creates an instance
@@ -77,7 +79,7 @@ protected:
      * @param resultVoxel interpolation gets set if inside sphere.
      * @return true if voxel is inside sphere-radius+1. +1 because of interpolation.
      */
-    bool calculateOneVoxel(const vector3& pos, voxelType* resultVoxel) const override
+    bool calculateOneVoxel(const vector3& pos, t_voxel* resultVoxel) const override
     {
         const blub::real &squaredDist(pos.squaredDistance(m_sphere.getCenter()));
         const blub::real &radius(m_sphere.getRadius());
@@ -97,13 +99,12 @@ protected:
         return false;
     }
 
-private:
     sphere(const ::blub::sphere& desc)
         : m_sphere(desc)
     {
     }
 
-private:
+protected:
     ::blub::sphere m_sphere;
 
 };

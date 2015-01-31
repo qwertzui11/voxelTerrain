@@ -10,8 +10,8 @@
 #include <boost/serialization/binary_object.hpp>
 
 #ifdef BLUB_USE_SOCI
-#   define SOCI_USE_BOOST
-#   include "soci/soci.h"
+#   include <soci-backend.h>
+#   include <type-conversion.h>
 #endif
 
 
@@ -56,11 +56,13 @@ protected:
 };
 
 
+std::size_t hash_value(const blub::string& value);
+
+
 }
 
 
 std::ostream& operator << (std::ostream& ostr, const blub::string& toCast);
-
 
 #ifdef BLUB_USE_SOCI
 

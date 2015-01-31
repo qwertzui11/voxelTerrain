@@ -2,6 +2,7 @@
 #define BLUB_MATH_INTERSECTION_HPP
 
 #include "blub/core/globals.hpp"
+#include "blub/math/predecl.hpp"
 
 
 namespace blub

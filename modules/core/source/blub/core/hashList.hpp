@@ -1,13 +1,22 @@
-#ifndef HASHLIST_HPP
-#define HASHLIST_HPP
+#ifndef BLUB_HASHLIST_HPP
+#define BLUB_HASHLIST_HPP
 
-#include <boost/unordered_set.hpp>
+#include <blub/core/globals.hpp>
+
+#include <unordered_set>
+#include <utility>
+#include <boost/functional/hash.hpp>
+
 
 namespace blub
 {
 
-template <class key>
-class hashList : public boost::unordered_set<key>
+
+template <class Key,
+          class Hash,
+          class KeyEqual,
+          class Allocator>
+class hashList : public std::unordered_set<Key, Hash, KeyEqual, Allocator>
 {
 
 };
@@ -16,4 +25,4 @@ class hashList : public boost::unordered_set<key>
 }
 
 
-#endif // HASHLIST_HPP
+#endif // BLUB_HASHLIST_HPP

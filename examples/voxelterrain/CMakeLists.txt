@@ -1,7 +1,6 @@
 
-
-
 set(sources
+customVertexInformation.cpp
 noise.cpp
 primitives.cpp
 )

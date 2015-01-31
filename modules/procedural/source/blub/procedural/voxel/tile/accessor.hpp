@@ -6,7 +6,6 @@
 #include "blub/core/scopedPtr.hpp"
 #include "blub/math/vector2int.hpp"
 #include "blub/math/vector3int.hpp"
-#include "blub/procedural/voxel/tile/container.hpp"
 #include "blub/serialization/access.hpp"
 #include "blub/serialization/nameValuePair.hpp"
 
@@ -26,12 +25,13 @@ namespace tile
  * This class looks up all voxel needed for the modified marching cubes and if lod is enabled 6*arrays for every side of the cube (transvoxel).
  * See http://www.terathon.com/voxels/ and http://www.terathon.com/lengyel/Lengyel-VoxelTerrain.pdf
  */
-template <class voxelType>
-class accessor : public base<accessor<voxelType> >
+template <class configType>
+class accessor : public base<accessor<configType> >
 {
 public:
-    typedef base<accessor<voxelType> > t_base;
-    typedef tile::container<voxelType> t_voxelContainer;
+    typedef configType t_config;
+    typedef base<accessor<t_config> > t_base;
+    typedef typename t_config::t_data t_voxel;
 
 #if defined(BOOST_NO_CXX11_CONSTEXPR)
     static const int32 voxelLength;
@@ -43,18 +43,18 @@ public:
     static const int32 voxelLengthSurface;
     static const int32 voxelCountSurface;
 #else
-    static constexpr int32 voxelLength = t_voxelContainer::voxelLength;
+    static constexpr int32 voxelLength = t_config::voxelsPerTile;
     static constexpr int32 voxelLengthWithNormalCorrection = voxelLength+3;
     static constexpr int32 voxelLengthLod = (voxelLength+1)*2;
     static constexpr int32 voxelCount = voxelLengthWithNormalCorrection*voxelLengthWithNormalCorrection*voxelLengthWithNormalCorrection;
     static constexpr int32 voxelCountLod = voxelLengthLod*voxelLengthLod;
     static constexpr int32 voxelCountLodAll = 6*voxelCountLod;
-    static constexpr int32 voxelLengthSurface = t_voxelContainer::voxelLength+1;
+    static constexpr int32 voxelLengthSurface = t_config::voxelsPerTile+1;
     static constexpr int32 voxelCountSurface = voxelLengthSurface*voxelLengthSurface*voxelLengthSurface;
 #endif
 
-    typedef vector<voxelType> t_voxelArray;
-    typedef vector<voxelType> t_voxelArrayLod;
+    typedef vector<t_voxel> t_voxelArray;
+    typedef vector<t_voxel> t_voxelArrayLod;
 
     /**
      * @brief create creates an instance.
@@ -82,7 +82,7 @@ public:
      * @param toSet
      * @return returns true if anything changed.
      */
-    bool setVoxel(const vector3int32& pos, const voxelType& toSet)
+    bool setVoxel(const vector3int32& pos, const t_voxel& toSet)
     {
         BASSERT(pos.x >= -1);
         BASSERT(pos.y >= -1);
@@ -97,7 +97,7 @@ public:
         }
 
         const int32 index((pos.x+1)*voxelLengthWithNormalCorrection*voxelLengthWithNormalCorrection + (pos.y+1)*voxelLengthWithNormalCorrection + pos.z+1);
-        const voxelType oldValue(m_voxels[index]);
+        const t_voxel oldValue(m_voxels[index]);
         m_voxels[index] = toSet;
 
         return oldValue != toSet;
@@ -111,7 +111,7 @@ public:
      * @return returns true if anything changed.
      * @see calculateCoordsLod()
      */
-    bool setVoxelLod(const vector3int32& pos, const voxelType& toSet, const int32& lod)
+    bool setVoxelLod(const vector3int32& pos, const t_voxel& toSet, const int32& lod)
     {
         return setVoxelLod(calculateCoordsLod(pos, lod), toSet, lod);
     }
@@ -121,7 +121,7 @@ public:
      * @param pos -1 <= pos.xyz < voxelLengthWithNormalCorrection-1
      * @return
      */
-    const voxelType& getVoxel(const vector3int32& pos) const
+    const t_voxel& getVoxel(const vector3int32& pos) const
     {
         BASSERT(pos.x >= -1);
         BASSERT(pos.y >= -1);
@@ -140,7 +140,7 @@ public:
      * @return
      * @see calculateCoordsLod()
      */
-    const voxelType& getVoxelLod(const vector3int32& pos, const int32& lod) const
+    const t_voxel& getVoxelLod(const vector3int32& pos, const int32& lod) const
     {
         return getVoxelLod(calculateCoordsLod(pos, lod), lod);
     }
@@ -223,7 +223,7 @@ public:
      * @return returns
      * @see getCalculateLod()
      */
-    t_voxelArrayLod* getVoxelArrayLod() // TODO remove me?
+    t_voxelArrayLod* getVoxelArrayLod()
     {
         return m_voxelsLod.get();
     }
@@ -285,19 +285,19 @@ protected:
     /**
      * @see setVoxelLod()
      */
-    bool setVoxelLod(const vector2int32& index, const voxelType& toSet, const int32& lod)
+    bool setVoxelLod(const vector2int32& index, const t_voxel& toSet, const int32& lod)
     {
         BASSERT(index >= 0);
         BASSERT(index < voxelCountLod);
         BASSERT(m_calculateLod);
-        BASSERT(!m_voxelsLod.isNull());
+        BASSERT(m_voxelsLod.get() != nullptr);
 
         if (toSet.getInterpolation() >= 0)
         {
             ++m_numVoxelLargerZeroLod;
         }
         const uint32 index_(lod*voxelCountLod + index.x*voxelLengthLod + index.y);
-        const voxelType oldValue((*m_voxelsLod)[index_]);
+        const t_voxel oldValue((*m_voxelsLod)[index_]);
         (*m_voxelsLod)[index_] = toSet;
 
         return oldValue != toSet;
@@ -305,7 +305,7 @@ protected:
     /**
      * @see getVoxelLod()
      */
-    const voxelType& getVoxelLod(const vector2int32& index, const int32& lod) const
+    const t_voxel& getVoxelLod(const vector2int32& index, const int32& lod) const
     {
         BASSERT(index >= 0);
         BASSERT(index < voxelCountLod);
@@ -356,6 +356,27 @@ private:
     BLUB_SERIALIZATION_ACCESS
 
     template <class formatType>
+    void save(formatType & readWrite, const uint32& version) const
+    {
+        using namespace serialization;
+
+        (void)version;
+
+        readWrite << nameValuePair::create("calculateLod", m_calculateLod);
+    }
+    template <class formatType>
+    void load(formatType & readWrite, const uint32& version)
+    {
+        using namespace serialization;
+
+        (void)version;
+
+        bool calculateLod;
+        readWrite >> nameValuePair::create("calculateLod", calculateLod);
+        setCalculateLod(calculateLod);
+    }
+
+    template <class formatType>
     void serialize(formatType & readWrite, const uint32& version)
     {
         using namespace serialization;
@@ -364,16 +385,11 @@ private:
 
         readWrite & nameValuePair::create("numVoxelLargerZero", m_numVoxelLargerZero);
         readWrite & nameValuePair::create("numVoxelLargerZeroLod", m_numVoxelLargerZeroLod);
-        readWrite & nameValuePair::create("calculateLod", m_calculateLod);
-
+        saveLoad(readWrite, *this, version); // handle m_calculateLod
         readWrite & nameValuePair::create("voxels", m_voxels); // OPTIMISE gives twice the size in binary format (2 instead of 1)
 
         if (m_calculateLod)
         {
-            if (m_voxelsLod.isNull())
-            {
-                setCalculateLod(m_calculateLod);
-            }
             BASSERT(!m_voxelsLod.isNull());
             readWrite & nameValuePair::create("voxelsLod", *m_voxelsLod);
         }
@@ -394,13 +410,13 @@ private:
 
 
 #if defined(BOOST_NO_CXX11_CONSTEXPR)
-template <class voxelType> const int32 accessor<voxelType>::voxelLength = t_voxelContainer::voxelLength;
+template <class voxelType> const int32 accessor<voxelType>::voxelLength = t_config::voxelsPerTile;
 template <class voxelType> const int32 accessor<voxelType>::voxelLengthWithNormalCorrection = voxelLength+3;
 template <class voxelType> const int32 accessor<voxelType>::voxelLengthLod = (voxelLength+1)*2;
 template <class voxelType> const int32 accessor<voxelType>::voxelCount = voxelLengthWithNormalCorrection*voxelLengthWithNormalCorrection*voxelLengthWithNormalCorrection;
 template <class voxelType> const int32 accessor<voxelType>::voxelCountLod = voxelLengthLod*voxelLengthLod;
 template <class voxelType> const int32 accessor<voxelType>::voxelCountLodAll = 6*voxelCountLod;
-template <class voxelType> const int32 accessor<voxelType>::voxelLengthSurface = t_voxelContainer::voxelLength+1;
+template <class voxelType> const int32 accessor<voxelType>::voxelLengthSurface = t_config::voxelsPerTile+1;
 template <class voxelType> const int32 accessor<voxelType>::voxelCountSurface = voxelLengthSurface*voxelLengthSurface*voxelLengthSurface;
 #else
 template <class voxelType> constexpr int32 accessor<voxelType>::voxelLength;

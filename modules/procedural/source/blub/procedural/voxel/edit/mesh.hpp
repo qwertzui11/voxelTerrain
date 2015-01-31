@@ -1,7 +1,7 @@
 #ifndef BLUB_PROCEDURAL_VOXEL_EDIT_MESH_HPP
 #define BLUB_PROCEDURAL_VOXEL_EDIT_MESH_HPP
 
-#include "blub/core/log.hpp"
+#include "blub/log/global.hpp"
 #include "blub/core/map.hpp"
 #include "blub/core/pair.hpp"
 #include "blub/core/sharedPointer.hpp"
@@ -123,7 +123,7 @@ public:
         BLUB_LOG_OUT() << "scene.mNumMeshes:" << scene.mNumMeshes << " scene.mRootNode->mNumChildren:" << scene.mRootNode->mNumChildren;
 #endif
 
-        for(int32 indMesh = 0; indMesh < scene.mNumMeshes; ++indMesh)
+        for(uint32 indMesh = 0; indMesh < scene.mNumMeshes; ++indMesh)
         {
             aiMesh *mesh(scene.mMeshes[indMesh]);
             loadMesh(*mesh, trans); // ignore result
@@ -230,7 +230,7 @@ protected:
         vector3 rayDir[] = {{1., 0., 0.},
                             {0., 1., 0.},
                             {0., 0., 1.}};
-        for (int32 indMesh = 0; indMesh < m_trees.size(); ++indMesh)
+        for (uint32 indMesh = 0; indMesh < m_trees.size(); ++indMesh)
         {
             t_tree *tree(static_cast<t_tree*>(m_trees[indMesh]));
             for (int32 indAxis = 0; indAxis < 3; ++indAxis)

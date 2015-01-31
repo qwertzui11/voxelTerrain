@@ -1,4 +1,4 @@
-#include "blub/core/log.hpp"
+#include "blub/log/global.hpp"
 #include "blub/log/system.hpp"
 #include "blub/math/math.hpp"
 #include "blub/math/quaternion.hpp"

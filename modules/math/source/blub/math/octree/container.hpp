@@ -101,7 +101,7 @@ public:
         {
             typename t_dataList::const_iterator it = m_data.find(toRemove);
             BASSERT(it != m_data.cend());
-            m_data.erase_return_void(it);
+            m_data.erase(it);
         }
 
         t_dataList m_data;
@@ -204,8 +204,8 @@ public:
         {
             it->second->remove(data);
         }
-        m_data.remove(data);
-        m_dataCoords.remove(data);
+        m_data.erase(data);
+        m_dataCoords.erase(data);
 
         return true;
     }

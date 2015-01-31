@@ -3,7 +3,7 @@
 
 #include "blub/core/sharedPointer.hpp"
 
-#include <boost/enable_shared_from_this.hpp>
+#include <memory>
 
 
 namespace blub
@@ -11,10 +11,10 @@ namespace blub
 
 
 template <typename classType>
-class enableSharedFromThis : public boost::enable_shared_from_this<classType>
+class enableSharedFromThis : public std::enable_shared_from_this<classType>
 {
 public:
-    typedef boost::enable_shared_from_this<classType> t_base;
+    typedef std::enable_shared_from_this<classType> t_base;
     typedef blub::sharedPointer<classType const> t_thisPtrConst;
     typedef blub::sharedPointer<classType> t_thisPtr;
 

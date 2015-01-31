@@ -1,6 +1,6 @@
 #include "timer.hpp"
 
-#include "blub/core/log.hpp"
+#include "blub/log/global.hpp"
 
 #include <boost/chrono.hpp>
 

@@ -3,12 +3,11 @@
 
 #include "blub/core/globals.hpp"
 #include "blub/core/hashMap.hpp"
-#include "blub/core/log.hpp"
+#include "blub/log/global.hpp"
 #include "blub/math/octree/container.hpp"
 #include "blub/math/vector3.hpp"
 #include "blub/procedural/voxel/simple/base.hpp"
 #include "blub/procedural/voxel/simple/surface.hpp"
-#include "blub/procedural/voxel/tile/container.hpp"
 #include "blub/procedural/voxel/tile/renderer.hpp"
 #include "blub/procedural/voxel/tile/surface.hpp"
 #include "blub/sync/predecl.hpp"
@@ -34,29 +33,27 @@ namespace simple
  * Casts signals on when to update an LOD.
  */
 // TODO reimplement class, with better threading and better octree/sync.
-template <class voxelType>
-class renderer
-        : public base<sharedPointer<tile::renderer<voxelType> > >
+template <class configType>
+class renderer : public base<typename configType::t_renderer::t_tile>
 {
 public:
-    typedef tile::renderer<voxelType> t_tile;
+    typedef configType t_config;
+    typedef typename t_config::t_renderer::t_tile t_tile;
     typedef sharedPointer<t_tile> t_tilePtr;
-    typedef base<t_tilePtr> t_base;
+    typedef base<t_tile> t_base;
     typedef typename t_base::t_tileId t_tileId;
-
-    typedef tile::container<voxelType> t_tileContainer;
 
     typedef sharedPointer<sync::identifier> t_cameraPtr;
     typedef sync::sender<t_tileId, t_cameraPtr> t_sync;
 
     typedef hashMap<vector3int32, t_tilePtr> t_tileMap;
 
-    typedef tile::surface<voxelType> t_tileSurface;
+    typedef typename t_config::t_surface::t_tile t_tileSurface;
     typedef sharedPointer<t_tileSurface> t_tileDataPtr;
 
     typedef std::function<bool (vector3, axisAlignedBox)> t_octreeSearchCallback;
 
-    typedef base<t_tileDataPtr> t_rendererSurface;
+    typedef typename t_config::t_surface::t_simple t_rendererSurface;
 
 
     /**
@@ -79,7 +76,8 @@ public:
         , m_voxelSize(math::pow(2., m_lod))
         , m_voxels(tiles)
     {
-        m_sync = new t_sync(worker, vector3int32(t_tileContainer::voxelLength));
+        const int32 voxelsPerTile(t_config::voxelsPerTile);
+        m_sync = new t_sync(worker, vector3int32(voxelsPerTile));
         m_sync->setCallbackInSyncRangeReceiver(boost::bind(&renderer::isInSyncRangeReceiver, this, _1, _2, _3));
         m_sync->setCallbackInSyncRangeSync(boost::bind(&renderer::isInSyncRangeSync, this, _1, _2, _3));
         m_sync->signalAdd()->connect(boost::bind(&renderer::addSyncReceiver, this, _1, _2));
@@ -90,7 +88,7 @@ public:
     /**
      * @brief ~renderer destructor.
      */
-    virtual ~renderer()
+    ~renderer()
     {
         delete m_sync;
     }
@@ -180,8 +178,9 @@ protected:
         typename t_tileMap::const_iterator it = m_tileData.find(id);
         const bool found(it != m_tileData.cend());
 
-        axisAlignedBox aabb(vector3(id*t_tileContainer::voxelLength),
-                            vector3(id*t_tileContainer::voxelLength+vector3int32(t_tileContainer::voxelLength)));
+        const int32 voxelsPerTile(t_config::voxelsPerTile);
+        axisAlignedBox aabb(vector3(id*voxelsPerTile),
+                            vector3(id*voxelsPerTile+vector3int32(voxelsPerTile)));
         aabb*=m_voxelSize;
         t_tilePtr workTile;
         if (found)
@@ -199,7 +198,7 @@ protected:
         {
             m_tileData.insert(id, workTile);
 
-            const vector3int32 size(t_tileContainer::voxelLength);
+            const vector3int32 size(voxelsPerTile);
             vector3int32 pos(id*size + size/2);
             m_sync->addSyncMaster(id, vector3(pos));
         }
@@ -216,7 +215,7 @@ protected:
 
         m_sync->removeSyncMaster(id);
 
-        m_tileData.erase_return_void(it);
+        m_tileData.erase(it);
     }
 
     /**
@@ -291,7 +290,7 @@ protected:
             // leads to bug when syncRadien are chosen too small.
         }*/
 
-        const int32 sizeLeaf(t_tileContainer::voxelLength);
+        const int32 sizeLeaf(t_config::voxelsPerTile);
         const vector3int32 posAbs(id*sizeLeaf);
         const axisAlignedBoxInt32 octreeNode(posAbs, posAbs+vector3int32(sizeLeaf));
         const vector3int32 toIterate[] = {vector3int32(-1, 0, 0),
@@ -345,7 +344,7 @@ protected:
      */
     int32 isInRange(const vector3& posLeafCenter, const axisAlignedBox& octreeNode)
     {
-        const vector3 sizeLeaf(t_tileContainer::voxelLength);
+        const vector3 sizeLeaf(t_config::voxelsPerTile);
         const vector3 sizeLeafDoubled(sizeLeaf*2);
         const vector3 octreeNodeTwiceMinimum((octreeNode.getMinimum()/sizeLeafDoubled).getFloor()*sizeLeafDoubled);
         const axisAlignedBox octreeNodeTwice(octreeNodeTwiceMinimum, octreeNodeTwiceMinimum + octreeNode.getSize()*2.);
@@ -383,7 +382,7 @@ protected:
     void updateCameraMaster(t_cameraPtr toUpdate, const blub::vector3& position)
     {
         const vector3 camPosScaled(position / m_voxelSize);
-        const real tileContainerSize(t_tileContainer::voxelLength);
+        const real tileContainerSize(t_config::voxelsPerTile);
         m_cameraPositionInTreeLeaf = (camPosScaled/tileContainerSize).getFloor()*tileContainerSize + vector3(tileContainerSize*0.5);
         m_sync->updateReceiverMaster(toUpdate, camPosScaled);
     }

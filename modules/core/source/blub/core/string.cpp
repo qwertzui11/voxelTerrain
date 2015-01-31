@@ -4,10 +4,7 @@
 
 #include <ostream>
 
-
-/*#ifndef NO_OGRE3D
-#include <OGRE/OgreString.h>
-#endif*/
+#include <boost/functional/hash.hpp>
 
 
 using namespace blub;
@@ -24,3 +21,12 @@ std::ostream &operator <<(std::ostream &ostr, const string &toCast)
 {
     return ostr << static_cast<std::string>(toCast);
 }
+
+
+std::size_t blub::hash_value(const string &value)
+{
+    std::size_t result(boost::hash_value<std::string>(static_cast<std::string>(value)));
+
+    return result;
+}
+

@@ -1,7 +1,7 @@
 #include "ray.hpp"
 
 #include "blub/math/plane.hpp"
-#include "blub/core/log.hpp"
+#include "blub/log/global.hpp"
 
 #ifndef BLUB_NO_OGRE3D
 #   include <OGRE/OgreRay.h>

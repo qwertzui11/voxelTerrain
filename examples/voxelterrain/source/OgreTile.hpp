@@ -3,8 +3,8 @@
 
 #include "blub/async/dispatcher.hpp"
 #include "blub/async/predecl.hpp"
-#include "blub/core/log.hpp"
 #include "blub/core/sharedPointer.hpp"
+#include "blub/log/global.hpp"
 #include "blub/math/axisAlignedBox.hpp"
 #include "blub/math/vector3.hpp"
 #include "blub/math/vector3int.hpp"
@@ -33,13 +33,18 @@ blub::uint32 g_meshId = 0;
  * Every tile contains a Ogre::Mesh, a Ogre::Entity and a Ogre::SceneNode.
  * For more information on how to use ogre3d see http://www.ogre3d.org/docs/manual/ and http://www.ogre3d.org/docs/api/1.9/ .
  */
-template <typename voxelType>
-class OgreTile : public blub::procedural::voxel::tile::renderer<voxelType>
+template <typename configType = blub::procedural::voxel::config>
+class OgreTile : public blub::procedural::voxel::tile::renderer<configType>
 {
 public:   
-    typedef voxelType t_voxel;
-    typedef blub::procedural::voxel::tile::renderer<t_voxel> t_base;
-    typedef blub::procedural::voxel::tile::surface<t_voxel> t_voxelSurfaceTile;
+    typedef configType t_config;
+    typedef blub::sharedPointer<OgreTile<t_config> > pointer;
+    typedef blub::sharedPointer<const OgreTile<t_config> > constPointer;
+    typedef blub::procedural::voxel::tile::renderer<t_config> t_base;
+    typedef typename t_config::t_renderer::t_tile* t_thiz;
+    typedef typename t_config::t_surface::t_tile t_voxelSurfaceTile;
+    typedef typename t_base::t_tileData::t_vertices t_vertices;
+    typedef typename t_config::t_vertex t_vertex;
 
     /**
      * @brief create creates an instance and calls initialise().
@@ -50,16 +55,16 @@ public:
      * Methods that end with Graphic have to get called by this dispatcher.
      * @return returns an instance. Never nullptr.
      */
-    static typename t_base::pointer create(Ogre::SceneManager *sc,
-                                           Ogre::String materialName,
-                                           blub::async::dispatcher *graphicDispatcher); // needed because only Ogre3d thread may call ogre3d methods
+    static pointer create(Ogre::SceneManager *sc,
+                          Ogre::String materialName,
+                          blub::async::dispatcher *graphicDispatcher); // needed because only Ogre3d thread may call ogre3d methods
     /**
      * @brief ~OgreTile desctructor. Calls the static method destroyAllGraphic() to ensure Ogre instances get deleted by the right thread.
      * The graphicDispatcher set by create() must stay valid until after ogre3d shutdown.
      */
     virtual ~OgreTile();
 
-    void setTileData(typename t_base::t_tileDataPtr convertToRenderAble, const blub::axisAlignedBox &aabb) override;
+    void setTileData(typename t_base::t_tileDataPtr convertToRenderAble, const blub::axisAlignedBox &aabb);
 
     void setVisible(const bool& vis) override;
     void setVisibleLod(const blub::uint16& indLod, const bool& vis) override;
@@ -109,8 +114,11 @@ protected:
      */
     static void destroyAllGraphic(Ogre::SceneManager* scene, Ogre::MeshPtr mesh_, Ogre::Entity *entity_, Ogre::SceneNode *node_);
 
-    blub::sharedPointer<const OgreTile<t_voxel> > getSharedThisPtr() const;
-    blub::sharedPointer<OgreTile<t_voxel> > getSharedThisPtr();
+    void addCustomVertexInformation(Ogre::VertexBufferBinding* binding, const t_vertices& vertices) {;}
+    void addCustomVertexDeclaration(Ogre::VertexDeclaration* decl) {;}
+
+    constPointer getSharedThisPtr() const;
+    pointer getSharedThisPtr();
 
 private:
     blub::async::dispatcher &m_graphicDispatcher;
@@ -125,8 +133,8 @@ private:
 };
 
 
-template <typename voxelType>
-OgreTile<voxelType>::OgreTile(Ogre::SceneManager *sc,
+template <typename configType>
+OgreTile<configType>::OgreTile(Ogre::SceneManager *sc,
                    Ogre::String materialName,
                    blub::async::dispatcher &graphicDispatcher)
     : m_graphicDispatcher(graphicDispatcher)
@@ -142,46 +150,46 @@ OgreTile<voxelType>::OgreTile(Ogre::SceneManager *sc,
 }
 
 
-template <typename voxelType>
-typename blub::procedural::voxel::tile::renderer<voxelType>::pointer OgreTile<voxelType>::create(Ogre::SceneManager *sc,
-																								 Ogre::String materialName,
-																								 blub::async::dispatcher *graphicDispatcher)
+template <typename configType>
+typename OgreTile<configType>::pointer OgreTile<configType>::create(Ogre::SceneManager *sc,
+                                                                  Ogre::String materialName,
+                                                                  blub::async::dispatcher *graphicDispatcher)
 {
     BASSERT(graphicDispatcher != nullptr);
-    typename t_base::pointer result(new OgreTile(sc, materialName, *graphicDispatcher));
-    result.template staticCast<OgreTile<t_voxel> >()->initialise();
+    pointer result(new OgreTile(sc, materialName, *graphicDispatcher));
+    result->initialise();
     return result;
 }
 
-template <typename voxelType>
-OgreTile<voxelType>::~OgreTile()
+template <typename configType>
+OgreTile<configType>::~OgreTile()
 {
     m_graphicDispatcher.dispatch(boost::bind(&OgreTile::destroyAllGraphic, m_scene, m_mesh, m_entity, m_node));
 }
 
-template <typename voxelType>
-void OgreTile<voxelType>::initialise()
+template <typename configType>
+void OgreTile<configType>::initialise()
 {
     m_graphicDispatcher.dispatch(boost::bind(&OgreTile::createMeshGraphic, getSharedThisPtr()));
 }
 
-template <typename voxelType>
-void OgreTile<voxelType>::setTileData(typename t_base::t_tileDataPtr convertToRenderAble, const blub::axisAlignedBox &aabb)
+template <typename configType>
+void OgreTile<configType>::setTileData(typename t_base::t_tileDataPtr convertToRenderAble, const blub::axisAlignedBox &aabb)
 {
     typename t_voxelSurfaceTile::pointer convertToRenderAbleCasted(convertToRenderAble.template staticCast<t_voxelSurfaceTile>());
     typename t_voxelSurfaceTile::pointer copy(t_voxelSurfaceTile::createCopy(convertToRenderAbleCasted));
     m_graphicDispatcher.dispatch(boost::bind(&OgreTile::setTileDataGraphic, getSharedThisPtr(), copy, aabb));
 }
 
-template <typename voxelType>
-void OgreTile<voxelType>::setVisible(const bool &vis)
+template <typename configType>
+void OgreTile<configType>::setVisible(const bool &vis)
 {
     t_base::setVisible(vis);
     m_graphicDispatcher.dispatch(boost::bind(&OgreTile::setVisibleGraphic, getSharedThisPtr(), vis));
 }
 
-template <typename voxelType>
-void OgreTile<voxelType>::setVisibleLod(const blub::uint16 &indLod, const bool &vis)
+template <typename configType>
+void OgreTile<configType>::setVisibleLod(const blub::uint16 &indLod, const bool &vis)
 {
     if (t_base::m_lodShouldBeVisible[indLod] == vis)
     {
@@ -192,8 +200,8 @@ void OgreTile<voxelType>::setVisibleLod(const blub::uint16 &indLod, const bool &
 }
 
 
-template <typename voxelType>
-void OgreTile<voxelType>::createMeshGraphic()
+template <typename configType>
+void OgreTile<configType>::createMeshGraphic()
 {
     m_mesh = Ogre::MeshManager::getSingleton().createManual(
                 blub::string("voxel_") + blub::string::number(g_meshId++),
@@ -201,8 +209,8 @@ void OgreTile<voxelType>::createMeshGraphic()
     m_node = m_scene->getRootSceneNode()->createChildSceneNode();
 }
 
-template <typename voxelType>
-void OgreTile<voxelType>::setTileDataGraphic(blub::sharedPointer<t_voxelSurfaceTile> convertToRenderAble, const blub::axisAlignedBox &aabb)
+template <typename configType>
+void OgreTile<configType>::setTileDataGraphic(blub::sharedPointer<t_voxelSurfaceTile> convertToRenderAble, const blub::axisAlignedBox &aabb)
 {
     using namespace blub;
 
@@ -228,13 +236,10 @@ void OgreTile<voxelType>::setTileDataGraphic(blub::sharedPointer<t_voxelSurfaceT
     }
 
     {
-        const typename t_base::t_tileData::t_positionsList positions(convertToRenderAble->getPositions());
-        const typename t_base::t_tileData::t_normalsList normals(convertToRenderAble->getNormals());
-        const typename t_base::t_tileData::t_indicesList indices(convertToRenderAble->getIndices());
+        const t_vertices vertices(convertToRenderAble->getVertices());
+        const typename t_base::t_tileData::t_indices indices(convertToRenderAble->getIndices());
 
-        BASSERT(positions.size() >= 3);
-        BASSERT(positions.size() >= 3);
-        BASSERT(positions.size() == normals.size());
+        BASSERT(vertices.size() >= 3);
         BASSERT(indices.size() >= 3);
         BASSERT(indices.size() % 3 == 0);
 
@@ -256,10 +261,11 @@ void OgreTile<voxelType>::setTileDataGraphic(blub::sharedPointer<t_voxelSurfaceT
 
                 decl->addElement(0, 0, Ogre::VET_FLOAT3, Ogre::VES_POSITION);
                 decl->addElement(1, 0, Ogre::VET_FLOAT3, Ogre::VES_NORMAL);
+                static_cast<t_thiz>(this)->addCustomVertexDeclaration(decl);
             }
         }
 
-        meshWork->sharedVertexData->vertexCount = positions.size();
+        meshWork->sharedVertexData->vertexCount = vertices.size();
         Ogre::VertexBufferBinding* bind = meshWork->sharedVertexData->vertexBufferBinding;
         {
             Ogre::HardwareVertexBufferSharedPtr positionBuffer;
@@ -269,9 +275,9 @@ void OgreTile<voxelType>::setTileDataGraphic(blub::sharedPointer<t_voxelSurfaceT
                         sizeVertex, meshWork->sharedVertexData->vertexCount, Ogre::HardwareBuffer::HBU_STATIC_WRITE_ONLY);
 
             vector3* toWriteTo(static_cast<vector3*>(positionBuffer->lock(Ogre::HardwareBuffer::HBL_DISCARD)));
-            for (uint32 ind = 0; ind < positions.size(); ++ind)
+            for (uint32 ind = 0; ind < vertices.size(); ++ind)
             {
-                toWriteTo[ind] = positions.at(ind) - aabbHalfSize;
+                toWriteTo[ind] = vertices.at(ind).position - aabbHalfSize;
             }
             positionBuffer->unlock();
 
@@ -285,11 +291,15 @@ void OgreTile<voxelType>::setTileDataGraphic(blub::sharedPointer<t_voxelSurfaceT
                         sizeVertex, meshWork->sharedVertexData->vertexCount, Ogre::HardwareBuffer::HBU_STATIC_WRITE_ONLY);
 
             vector3* toWriteTo(static_cast<vector3*>(normalBuffer->lock(Ogre::HardwareBuffer::HBL_DISCARD)));
-            memcpy(toWriteTo, normals.data(), sizeof(vector3) * meshWork->sharedVertexData->vertexCount);
+            for (uint32 ind = 0; ind < vertices.size(); ++ind)
+            {
+                toWriteTo[ind] = vertices.at(ind).normal;
+            }
             normalBuffer->unlock();
 
             bind->setBinding(1, normalBuffer);
         }
+        static_cast<t_thiz>(this)->addCustomVertexInformation(bind, vertices);
 
         if (numSubmeshes < meshWork->getNumSubMeshes())
         {
@@ -330,7 +340,7 @@ void OgreTile<voxelType>::setTileDataGraphic(blub::sharedPointer<t_voxelSurfaceT
             }
             else
             {
-                const typename t_base::t_tileData::t_indicesList& indicesLod(convertToRenderAble->getIndicesLod(indSubMesh-1));
+                const typename t_base::t_tileData::t_indices& indicesLod(convertToRenderAble->getIndicesLod(indSubMesh-1));
                 BASSERT(indicesLod.size() < 65536);
                 if (indicesLod.empty())
                 {
@@ -353,7 +363,7 @@ void OgreTile<voxelType>::setTileDataGraphic(blub::sharedPointer<t_voxelSurfaceT
                 }
                 else
                 {
-                    const typename t_base::t_tileData::t_indicesList& indicesLod(convertToRenderAble->getIndicesLod(indSubMesh-1));
+                    const typename t_base::t_tileData::t_indices& indicesLod(convertToRenderAble->getIndicesLod(indSubMesh-1));
                     memcpy(toWriteTo, indicesLod.data(), sizeof(uint16) * numIndices);
                 }
             }
@@ -387,14 +397,14 @@ void OgreTile<voxelType>::setTileDataGraphic(blub::sharedPointer<t_voxelSurfaceT
     }
 }
 
-template <typename voxelType>
-void OgreTile<voxelType>::setVisibleGraphic(const bool& vis)
+template <typename configType>
+void OgreTile<configType>::setVisibleGraphic(const bool& vis)
 {
     m_node->setVisible(vis);
 }
 
-template <typename voxelType>
-void OgreTile<voxelType>::setVisibleLodGraphic(const blub::uint16& indLod, const bool& vis)
+template <typename configType>
+void OgreTile<configType>::setVisibleLodGraphic(const blub::uint16& indLod, const bool& vis)
 {
     if (m_indexLodSubMesh[indLod] != -1)
     {
@@ -402,8 +412,8 @@ void OgreTile<voxelType>::setVisibleLodGraphic(const blub::uint16& indLod, const
     }
 }
 
-template <typename voxelType>
-void OgreTile<voxelType>::destroyAllGraphic(Ogre::SceneManager* scene, Ogre::MeshPtr mesh_, Ogre::Entity *entity_, Ogre::SceneNode *node_)
+template <typename configType>
+void OgreTile<configType>::destroyAllGraphic(Ogre::SceneManager* scene, Ogre::MeshPtr mesh_, Ogre::Entity *entity_, Ogre::SceneNode *node_)
 {
     scene->destroyEntity(entity_);
     Ogre::MeshManager::getSingleton().remove(mesh_->getName());
@@ -411,15 +421,15 @@ void OgreTile<voxelType>::destroyAllGraphic(Ogre::SceneManager* scene, Ogre::Mes
     scene->destroySceneNode(node_);
 }
 
-template <typename voxelType>
-blub::sharedPointer<const OgreTile<voxelType> > OgreTile<voxelType>::getSharedThisPtr() const
+template <typename configType>
+blub::sharedPointer<const OgreTile<configType> > OgreTile<configType>::getSharedThisPtr() const
 {
-    return t_base::getSharedThisPtr().template staticCast<const OgreTile<voxelType> >();
+    return t_base::getSharedThisPtr().template staticCast<const OgreTile<configType> >();
 }
-template <typename voxelType>
-blub::sharedPointer<OgreTile<voxelType> > OgreTile<voxelType>::getSharedThisPtr()
+template <typename configType>
+blub::sharedPointer<OgreTile<configType> > OgreTile<configType>::getSharedThisPtr()
 {
-    return t_base::getSharedThisPtr().template staticCast<OgreTile<voxelType> >();
+    return t_base::getSharedThisPtr().template staticCast<OgreTile<configType> >();
 }
 
 

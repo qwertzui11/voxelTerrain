@@ -3,8 +3,8 @@
 
 #include <utility>
 
-#ifndef BLUB_NO_BULLET
-#   include <bullet/LinearMath/btQuaternion.h>
+#ifdef BLUB_USE_BULLET
+#   include <LinearMath/btQuaternion.h>
 #endif
 #ifndef BLUB_NO_OGRE3D
 #   include <OGRE/OgreQuaternion.h>

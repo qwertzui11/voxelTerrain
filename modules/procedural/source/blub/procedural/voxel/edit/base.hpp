@@ -29,14 +29,16 @@ namespace edit
  * If you want to write your own edit overwrite the method calculateOneVoxel() or calculateVoxel(). For most flexibility override calculateVoxel().
  * Because base derives enableSharedFromThis you have to write a create method that creates a shared_ptr of the class.
  */
-template <class voxelType>
-class base : public enableSharedFromThis<base<voxelType> >, public blub::noncopyable
+template <class configType>
+class base : public enableSharedFromThis<base<configType> >, public blub::noncopyable
 {
 public:
-    typedef enableSharedFromThis<base<voxelType> > t_base;
-    typedef sharedPointer<base<voxelType> > pointer;
-    typedef simple::container::base<voxelType> t_voxelContainerSimple;
-    typedef tile::container<voxelType> t_voxelContainerTile;
+    typedef configType t_config;
+    typedef enableSharedFromThis<base<t_config> > t_base;
+    typedef sharedPointer<base<t_config> > pointer;
+    typedef typename t_config::t_container::t_simple t_voxelContainerSimple;
+    typedef typename t_config::t_container::t_tile t_voxelContainerTile;
+    typedef typename t_config::t_data t_voxel;
 
     /**
      * @brief destructor
@@ -75,12 +77,13 @@ public:
 
         const blub::axisAlignedBox aabb(getAxisAlignedBoundingBox(trans));
 
-        const vector3int32 posContainerAbsolut(voxelContainerOffset*t_voxelContainerTile::voxelLength);
-        for (int32 indX = 0; indX < t_voxelContainerTile::voxelLength; ++indX)
+        const int32 voxelsPerTile(t_config::voxelsPerTile);
+        const vector3int32 posContainerAbsolut(voxelContainerOffset*voxelsPerTile);
+        for (int32 indX = 0; indX < t_config::voxelsPerTile; ++indX)
         {
-            for (int32 indY = 0; indY < t_voxelContainerTile::voxelLength; ++indY)
+            for (int32 indY = 0; indY < t_config::voxelsPerTile; ++indY)
             {
-                for (int32 indZ = 0; indZ < t_voxelContainerTile::voxelLength; ++indZ)
+                for (int32 indZ = 0; indZ < t_config::voxelsPerTile; ++indZ)
                 {
                     const vector3int32 posVoxel(indX, indY, indZ);
                     vector3 posAbsolut(posContainerAbsolut + posVoxel);
@@ -93,7 +96,7 @@ public:
                     posAbsolut -= trans.position;
                     posAbsolut /= trans.scale;
 
-                    voxelType voxelResult;
+                    t_voxel voxelResult;
                     const bool changeVoxel(calculateOneVoxel(posAbsolut, &voxelResult));
 
                     if (!changeVoxel)
@@ -147,6 +150,13 @@ public:
         return m_voxelContainer;
     }
 
+    /**
+     * @brief getAxisAlignedBoundingBox returns the transformed blub::axisAlignedBox in which the voxel have to get recalculated.
+     * @param trans
+     * @return
+     */
+    virtual blub::axisAlignedBox getAxisAlignedBoundingBox(const transform& trans) const = 0;
+
 protected:
     base()
         : m_voxelContainer(nullptr)
@@ -154,21 +164,13 @@ protected:
     {
     }
 
-    friend t_voxelContainerSimple;
-
-    /**
-     * @brief getAxisAlignedBoundingBox returns the transformed blub::axisAlignedBox in which the voxel have to get recalculated.
-     * @param trans
-     * @return
-     */
-    virtual blub::axisAlignedBox getAxisAlignedBoundingBox(const transform& trans) const = 0;
     /**
      * @brief Implement this method for your own edit
      * @param pos describes the voxel-position
      * @param resultVoxel if a value could get calculated, set it to resultVoxel.
      * @return true if it was possible to calculate a value.
      */
-    virtual bool calculateOneVoxel(const vector3& pos, voxelType* resultVoxel) const
+    virtual bool calculateOneVoxel(const vector3& pos, t_voxel* resultVoxel) const
     {
         return false;
     }
@@ -222,7 +224,7 @@ protected:
             BASSERT(false);
         }
 
-        voxelType bufferVoxel;
+        t_voxel bufferVoxel;
 
         int32 voxelStartRel(0);
         int32 voxelEndRel(0);
@@ -230,7 +232,7 @@ protected:
         {
             {
                 real roundedDown(blub::math::floor(pointA));
-                if (roundedDown >= 0 && roundedDown < t_voxelContainerTile::voxelLength)
+                if (roundedDown >= 0 && roundedDown < t_config::voxelsPerTile)
                 {
                     if (vector3(lineAxis).dotProduct(planeA.normal) <= -level)
                     {
@@ -246,7 +248,7 @@ protected:
             }
             {
                 real roundedUp(blub::math::ceil(pointA));
-                if (roundedUp >= 0. && roundedUp < t_voxelContainerTile::voxelLength)
+                if (roundedUp >= 0. && roundedUp < t_config::voxelsPerTile)
                 {
                     if (vector3(lineAxis).dotProduct(planeA.normal) <= -level)
                     {
@@ -264,7 +266,7 @@ protected:
         {
             {
                 real roundedDown(blub::math::floor(pointB));
-                if (roundedDown >= 0 && roundedDown < t_voxelContainerTile::voxelLength)
+                if (roundedDown >= 0 && roundedDown < t_config::voxelsPerTile)
                 {
                     if (vector3(lineAxis).dotProduct(planeB.normal) >= level)
                     {
@@ -280,7 +282,7 @@ protected:
             }
             {
                 real roundedUp(blub::math::ceil(pointB));
-                if (roundedUp >= 0. && roundedUp < t_voxelContainerTile::voxelLength)
+                if (roundedUp >= 0. && roundedUp < t_config::voxelsPerTile)
                 {
                     if (vector3(lineAxis).dotProduct(planeB.normal) >= level)
                     {
@@ -299,8 +301,8 @@ protected:
             real cutPointVoxelDown = blub::math::floor(pointA);
             real cutPointVoxelUp = blub::math::ceil(pointB+1);
 
-            int32 voxelClampedStart = math::clamp<real>(cutPointVoxelDown, 0., t_voxelContainerTile::voxelLength);
-            int32 voxelClampedEnd = math::clamp<real>(cutPointVoxelUp, 0., t_voxelContainerTile::voxelLength);
+            int32 voxelClampedStart = math::clamp<real>(cutPointVoxelDown, 0., t_config::voxelsPerTile);
+            int32 voxelClampedEnd = math::clamp<real>(cutPointVoxelUp, 0., t_config::voxelsPerTile);
 
             for (int32 ind = voxelClampedStart + voxelStartRel; ind < voxelClampedEnd - voxelEndRel; ++ind)
             {
@@ -312,7 +314,7 @@ protected:
 
 
 private:
-    virtual void setVoxel(t_voxelContainerTile *voxelContainer, const vector3int32 &posVoxel, voxelType &toSet) const
+    virtual void setVoxel(t_voxelContainerTile *voxelContainer, const vector3int32 &posVoxel, t_voxel &toSet) const
     {
         voxelContainer->setVoxelIfInterpolationHigher(posVoxel, toSet);
     }

@@ -26,19 +26,22 @@ namespace container
  * The class handles synchronisation and paralellisation of edits and provides several voxel-getter/setter.
  * All methods are threadsafe, if not declared different.
  */
-template <class voxelType>
-class base : public simple::base<utils::tile<voxelType> > // FIXME ugly as hell remove util::tile, make more template parameter, remove base<sharedPointer<tile>> in all other simple classes
+template <class configType>
+class base : public simple::base<typename configType::t_container::t_tile>
 {
 public:
-    typedef voxelType t_voxel;
-    typedef utils::tile<voxelType> t_utilsTile;
-    typedef simple::base<t_utilsTile> t_base;
-
-    typedef sharedPointer<edit::base<voxelType> const> t_editConstPtr;
-    typedef sharedPointer<edit::base<voxelType> > t_editPtr;
-    typedef tile::container<voxelType> t_tile;
+    typedef configType t_config;
+    typedef typename t_config::t_data t_voxel;
+    typedef typename configType::t_container::t_tile t_tile;
+    typedef simple::base<t_tile> t_base;
     typedef sharedPointer<t_tile> t_tilePtr;
+    typedef utils::tile<t_tile> t_utilsTile;
+
+    typedef sharedPointer<edit::base<t_config> const> t_editConstPtr;
+    typedef sharedPointer<edit::base<t_config> > t_editPtr;
     typedef typename t_base::t_tileId t_tileId;
+
+    typedef hashMap<t_tileId, t_utilsTile> t_tilesGotChangedMap;
 
     /**
      * @brief base constructor.
@@ -72,7 +75,7 @@ public:
      */
 //    void editVoxel(t_editPtr change, const transform &trans = blub::transform())
 //    {
-//        editVoxel(change.template staticCast<const edit::base<voxelType> >(), trans);
+//        editVoxel(change.template staticCast<const edit::base<t_config> >(), trans);
 //    }
 
     /**
@@ -133,7 +136,7 @@ public:
      */
     static t_tileId calculateVoxelPosToTileId(const vector3int32& voxelPos)
     {
-        return vector3int32((blub::vector3(voxelPos) / (real)tile::container<voxelType>::voxelLength).getFloor());
+        return vector3int32((blub::vector3(voxelPos) / (real)t_config::voxelsPerTile).getFloor());
     }
 
     /**
@@ -143,23 +146,56 @@ public:
      */
     static vector3int32 calculateVoxelPosInTile(const vector3int32& voxelPos) // TODO floor?!
     {
-        vector3int32 result(voxelPos % tile::container<voxelType>::voxelLength);
-        if (voxelPos.x < 0 && voxelPos.x%tile::container<voxelType>::voxelLength != 0)
+        vector3int32 result(voxelPos % t_config::voxelsPerTile);
+        if (voxelPos.x < 0 && voxelPos.x%t_config::voxelsPerTile != 0)
         {
-            result.x = tile::container<voxelType>::voxelLength + result.x;
+            result.x = t_config::voxelsPerTile + result.x;
         }
-        if (voxelPos.y < 0 && voxelPos.y%tile::container<voxelType>::voxelLength != 0)
+        if (voxelPos.y < 0 && voxelPos.y%t_config::voxelsPerTile != 0)
         {
-            result.y = tile::container<voxelType>::voxelLength + result.y;
+            result.y = t_config::voxelsPerTile + result.y;
         }
-        if (voxelPos.z < 0 && voxelPos.z%tile::container<voxelType>::voxelLength != 0)
+        if (voxelPos.z < 0 && voxelPos.z%t_config::voxelsPerTile != 0)
         {
-            result.z = tile::container<voxelType>::voxelLength + result.z;
+            result.z = t_config::voxelsPerTile + result.z;
         }
         return result;
     }
 
+    const t_tilesGotChangedMap &getTilesThatGotEdited() const
+    {
+        return m_tilesThatGotEdited;
+    }
+
 protected:
+    void addToChangeList(const t_tileId &id, t_utilsTile toAdd)
+    {
+        BASSERT(!t_base::m_classLocker.tryLockForWrite());
+        m_tilesThatGotEdited.insert(id, toAdd);
+    }
+    void unlockForEditMaster() override
+    {
+        t_base::unlockForEditMaster();
+        if (!m_tilesThatGotEdited.empty())
+        {
+            t_base::m_sigEditDone();
+        }
+    }
+    bool tryLockForEditMaster() override
+    {
+        const bool success(t_base::tryLockForEditMaster());
+        if (success)
+        {
+            m_tilesThatGotEdited.clear();
+        }
+        return success;
+    }
+    void lockForEditMaster() override
+    {
+        t_base::lockForEditMaster();
+        m_tilesThatGotEdited.clear();
+    }
+
     /**
      * @brief The editTodo struct holds the edit information, for the dispatcher. A primitive buffer for the paramters delivered by editVoxel().
      */
@@ -230,9 +266,8 @@ protected:
 
         if (!alreadyLocked)
         {
-            t_base::lockForEditMaster();
+            lockForEditMaster();
         }
-        BASSERT(!t_base::tryLockForEditMaster());
 
         BASSERT(m_numInTilesInTask == 0);
 
@@ -328,14 +363,14 @@ protected:
             if (m_editsTodo.isEmpty())
             {
                 // unlock all tiles
-                for (auto work : t_base::getTilesThatGotEdited())
+                for (const typename t_tilesGotChangedMap::value_type& work : getTilesThatGotEdited())
                 {
                     if (!work.second.data.isNull())
                     {
                         work.second.data->endEdit();
                     }
                 }
-                t_base::unlockForEditMaster();
+                unlockForEditMaster();
             }
             else
             {
@@ -423,6 +458,10 @@ protected:
 
     typedef list<editTodo> t_editTodoList;
     t_editTodoList m_editsTodo;
+
+    // overwrite/reimpl stuff from t_base - because no usage of sharedPointer<>
+    t_tilesGotChangedMap m_tilesThatGotEdited;
+
 };
 
 

@@ -20,12 +20,14 @@ namespace edit
  * @brief insertes/removes voxels that are included in an blub::axisAlignedBox.
  * Always axis-aligned - use box if you want to rotate.
  */
-template <class voxelType>
-class axisAlignedBox : public base<voxelType>
+template <class configType>
+class axisAlignedBox : public base<configType>
 {
 public:
-    typedef base<voxelType> t_base;
+    typedef configType t_config;
+    typedef base<configType> t_base;
     typedef sharedPointer<axisAlignedBox> pointer;
+    typedef typename t_config::t_data t_voxel;
 
     /**
      * @brief Allocates an instance and initialises the class
@@ -79,7 +81,7 @@ protected:
      * @param resultVoxel if pos is inside, resultVoxel interpolation gets set to maximum. Must not be nullptr
      * @return true if pos is inside.
      */
-    bool calculateOneVoxel(const vector3& pos, voxelType* resultVoxel) const override
+    bool calculateOneVoxel(const vector3& pos, t_voxel* resultVoxel) const override
     {
         if (m_aab.contains(pos))
         {

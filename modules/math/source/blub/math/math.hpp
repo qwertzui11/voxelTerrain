@@ -85,8 +85,8 @@ public:
     static int32 pow(const int32& number, const int32& expo);
     static real pow(const real& number, const real& expo);
 
-
-
+    static uint32 rand();
+    static real randReal();
 
 private:
     math()

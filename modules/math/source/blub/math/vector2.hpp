@@ -2,6 +2,7 @@
 #define BLUB_VECTOR2_HPP
 
 #include "blub/core/globals.hpp"
+#include "blub/math/predecl.hpp"
 #include "blub/serialization/access.hpp"
 #include "blub/serialization/nameValuePair.hpp"
 

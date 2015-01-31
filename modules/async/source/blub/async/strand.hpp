@@ -1,5 +1,5 @@
-#ifndef ASYNC_SEPERATE_HPP
-#define ASYNC_SEPERATE_HPP
+#ifndef ASYNC_STRAND_HPP
+#define ASYNC_STRAND_HPP
 
 #include "blub/async/predecl.hpp"
 #include "blub/core/globals.hpp"
@@ -13,10 +13,10 @@ namespace async
 {
 
 
-class seperate
+class strand
 {
 public:
-    seperate(dispatcher& disp);
+    strand(dispatcher& disp);
 
     template<typename CompletionHandler>
     void dispatch(CompletionHandler handler)
@@ -28,6 +28,11 @@ public:
     void post(CompletionHandler handler)
     {
         m_service.post(handler);
+    }
+
+    bool isRunningInThisThread() const
+    {
+        return m_service.running_in_this_thread();
     }
 
     const dispatcher &getDispatcher() const;
@@ -44,4 +49,4 @@ private:
 }
 
 
-#endif // ASYNC_SEPERATE_HPP
+#endif // ASYNC_STRAND_HPP

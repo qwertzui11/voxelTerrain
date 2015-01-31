@@ -35,7 +35,10 @@ byteArray byteArray::mid(const uint32 &index, const int32 &length) const
         len = t_base::size()-index;
     }
     BASSERT(len >= 0);
-
+    if (len == 0)
+    {
+        return byteArray();
+    }
     const byteArray result(t_base::data()+index, len);
     return result;
 }

@@ -1,17 +1,23 @@
-#include "blub/core/log.hpp"
+#include "blub/log/global.hpp"
 #include "blub/log/system.hpp"
 #include "blub/math/math.hpp"
 #include "blub/math/quaternion.hpp"
 #include "blub/math/sphere.hpp"
 #include "blub/math/transform.hpp"
 #include "blub/sync/identifier.hpp"
+#include "blub/procedural/voxel/config.hpp"
 #include "blub/procedural/voxel/edit/noise.hpp"
 #include "blub/procedural/voxel/edit/sphere.hpp"
+#include "blub/procedural/voxel/simple/accessor.hpp"
 #include "blub/procedural/voxel/simple/container/inMemory.hpp"
+#include "blub/procedural/voxel/simple/renderer.hpp"
+#include "blub/procedural/voxel/simple/surface.hpp"
 #include "blub/procedural/voxel/terrain/accessor.hpp"
 #include "blub/procedural/voxel/terrain/surface.hpp"
 #include "blub/procedural/voxel/terrain/renderer.hpp"
 #include "blub/procedural/voxel/tile/container.hpp"
+#include "blub/procedural/voxel/tile/renderer.hpp"
+#include "blub/procedural/voxel/tile/surface.hpp"
 
 #include "OgreTile.hpp"
 #include "Handler.hpp"
@@ -27,14 +33,28 @@ using namespace blub::procedural;
 using namespace blub;
 
 
+struct config : public voxel::config
+{
+    typedef container<config> t_container;
+    typedef accessor<config> t_accessor;
+    typedef surface<config> t_surface;
+    template <typename configType>
+    struct renderer : public voxel::config::renderer<configType>
+    {
+        typedef OgreTile<configType> t_tile;
+    };
+    typedef renderer<config> t_renderer;
+};
+
 typedef sharedPointer<sync::identifier> t_cameraIdentifier;
-typedef voxel::data t_voxel;
-typedef voxel::simple::container::inMemory<t_voxel> t_voxelContainer;
-typedef voxel::terrain::accessor<t_voxel> t_voxelAccessor;
-typedef voxel::terrain::renderer<t_voxel> t_voxelRenderer;
-typedef voxel::terrain::surface<t_voxel> t_voxelSurface;
-typedef voxel::edit::base<t_voxel> t_voxelEdit;
-typedef OgreTile<t_voxel> t_renderTile;
+typedef config t_config;
+typedef voxel::simple::container::inMemory<t_config> t_voxelContainer;
+typedef voxel::terrain::accessor<t_config> t_voxelAccessor;
+typedef voxel::terrain::renderer<t_config> t_voxelRenderer;
+typedef voxel::terrain::surface<t_config> t_voxelSurface;
+typedef voxel::edit::noise<t_config> t_editNoise;
+typedef voxel::edit::sphere<t_config> t_editSphere;
+typedef OgreTile<t_config> t_renderTile;
 
 
 void createSphere(t_voxelContainer *container, const vector3 &position, const bool &cut);
@@ -62,7 +82,7 @@ int main(int /*argc*/, char* /*argv*/[])
     scopedPointer<t_voxelSurface> voxelSurface;
     scopedPointer<t_voxelRenderer> voxelRenderer;
 
-    async::dispatcher terrainDispatcher(4, false, "terrain");
+    async::dispatcher terrainDispatcher(12, false, "terrain");
 
     t_cameraIdentifier cameraIdentifier;
     {
@@ -82,9 +102,9 @@ int main(int /*argc*/, char* /*argv*/[])
 
         // renderer
         t_voxelRenderer::t_syncRadiusList lodRadien(numLod);
-        lodRadien[0] = voxel::tile::container<t_voxel>::voxelLength*2.0;
-        lodRadien[1] = voxel::tile::container<t_voxel>::voxelLength*2.0;
-        lodRadien[2] = voxel::tile::container<t_voxel>::voxelLength*2.0;
+        lodRadien[0] = t_config::voxelsPerTile*2.0;
+        lodRadien[1] = t_config::voxelsPerTile*2.0;
+        lodRadien[2] = t_config::voxelsPerTile*2.0;
         voxelRenderer.reset(new t_voxelRenderer(terrainDispatcher, *voxelSurface, lodRadien));
         voxelRenderer->setCreateTileCallback(callbackCreate);
         cameraIdentifier = sync::identifier::create();
@@ -107,7 +127,7 @@ int main(int /*argc*/, char* /*argv*/[])
 
     // create voxel
     {
-        voxel::edit::noise<t_voxel>::pointer noise(voxel::edit::noise<t_voxel>::create(axisAlignedBox(vector3(-100., -100., -100), vector3(100., 100., 100.)), vector3(0.025)));
+        t_editNoise::pointer noise(t_editNoise::create(axisAlignedBox(vector3(-100., -100., -100), vector3(100., 100., 100.)), vector3(0.025)));
         voxelContainer->editVoxel(noise);
     }
 
@@ -127,7 +147,7 @@ void createSphere(t_voxelContainer *container, const vector3 &position, const bo
 {
     BLUB_LOG_OUT() << "createSphere";
 
-    voxel::edit::sphere<t_voxel>::pointer sphereEdit(voxel::edit::sphere<t_voxel>::create(sphere(position, 5.)));
+    t_editSphere::pointer sphereEdit(t_editSphere::create(sphere(position, 5.)));
     sphereEdit->setCut(cut);
     container->editVoxel(sphereEdit);
 }

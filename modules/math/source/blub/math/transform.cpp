@@ -1,7 +1,7 @@
 #include "transform.hpp"
 
-#ifndef BLUB_NO_BULLET
-#include <bullet/LinearMath/btTransform.h>
+#ifdef BLUB_USE_BULLET
+#   include <LinearMath/btTransform.h>
 #endif
 
 using namespace blub;

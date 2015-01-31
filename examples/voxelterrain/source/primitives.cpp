@@ -1,21 +1,31 @@
-#include "blub/core/log.hpp"
+#include "blub/log/global.hpp"
 #include "blub/log/system.hpp"
+#include "blub/math/colour.hpp"
 #include "blub/math/math.hpp"
 #include "blub/math/quaternion.hpp"
 #include "blub/math/sphere.hpp"
 #include "blub/math/transform.hpp"
+#include "blub/serialization/callBaseObject.hpp"
 #include "blub/sync/identifier.hpp"
+#include "blub/procedural/voxel/config.hpp"
 #include "blub/procedural/voxel/edit/axisAlignedBox.hpp"
-#include "blub/procedural/voxel/edit/box.hpp"
+//#include "blub/procedural/voxel/edit/box.hpp"
 #include "blub/procedural/voxel/edit/sphere.hpp"
+#include "blub/procedural/voxel/simple/accessor.hpp"
 #include "blub/procedural/voxel/simple/container/inMemory.hpp"
+#include "blub/procedural/voxel/simple/renderer.hpp"
+#include "blub/procedural/voxel/simple/surface.hpp"
 #include "blub/procedural/voxel/terrain/accessor.hpp"
 #include "blub/procedural/voxel/terrain/surface.hpp"
 #include "blub/procedural/voxel/terrain/renderer.hpp"
 #include "blub/procedural/voxel/tile/container.hpp"
+#include "blub/procedural/voxel/tile/renderer.hpp"
+#include "blub/procedural/voxel/tile/surface.hpp"
 
 #include "OgreTile.hpp"
 #include "Handler.hpp"
+
+#include <boost/function.hpp>
 
 
 /** @example primitives.cpp
@@ -26,21 +36,32 @@
  */
 
 
-
-
-
 using namespace blub::procedural;
 using namespace blub;
 
 
+struct config : public voxel::config
+{
+    typedef container<config> t_container;
+    typedef accessor<config> t_accessor;
+    typedef surface<config> t_surface;
+    template <typename configType>
+    struct renderer : public voxel::config::renderer<configType>
+    {
+        typedef OgreTile<configType> t_tile;
+    };
+    typedef renderer<config> t_renderer;
+};
+
 typedef sharedPointer<sync::identifier> t_cameraIdentifier;
-typedef voxel::data t_voxel;
-typedef voxel::simple::container::inMemory<t_voxel> t_voxelContainer;
-typedef voxel::terrain::accessor<t_voxel> t_voxelAccessor;
-typedef voxel::terrain::renderer<t_voxel> t_voxelRenderer;
-typedef voxel::terrain::surface<t_voxel> t_voxelSurface;
-typedef voxel::edit::base<t_voxel> t_voxelEdit;
-typedef OgreTile<t_voxel> t_renderTile;
+typedef config t_config;
+typedef voxel::simple::container::inMemory<t_config> t_voxelContainer;
+typedef voxel::terrain::accessor<t_config> t_voxelAccessor;
+typedef voxel::terrain::renderer<t_config> t_voxelRenderer;
+typedef voxel::terrain::surface<t_config> t_voxelSurface;
+typedef voxel::edit::axisAlignedBox<t_config> t_editAxisAlignedBox;
+typedef voxel::edit::sphere<t_config> t_editSphere;
+typedef OgreTile<t_config> t_renderTile;
 
 
 void createSphere(t_voxelContainer *container, const vector3 &position, const bool &cut);
@@ -91,11 +112,11 @@ int main(int /*argc*/, char* /*argv*/[])
 
         // renderer
         t_voxelRenderer::t_syncRadiusList lodRadien(numLod); // defines how far a tile on a lod has to be away to be rendered.
-        lodRadien[0] = voxel::tile::container<t_voxel>::voxelLength*2.0;
-        lodRadien[1] = voxel::tile::container<t_voxel>::voxelLength*2.0;
-        lodRadien[2] = voxel::tile::container<t_voxel>::voxelLength*2.0;
+        lodRadien[0] = t_config::voxelsPerTile*2.0;
+        lodRadien[1] = t_config::voxelsPerTile*2.0;
+        lodRadien[2] = t_config::voxelsPerTile*2.0;
         voxelRenderer.reset(new t_voxelRenderer(terrainDispatcher, *voxelSurface, lodRadien));
-        voxelRenderer->setCreateTileCallback(callbackCreate);
+        voxelRenderer->setCreateTileCallback(callbackCreate); // TODO must be set - shouldnt
         cameraIdentifier = sync::identifier::create();
         voxelRenderer->addCamera(cameraIdentifier, handler.camera->getPosition());
         handler.signalFrame()->connect(
@@ -117,8 +138,8 @@ int main(int /*argc*/, char* /*argv*/[])
     // create voxel
     {
         // spheres
-        voxel::edit::sphere<t_voxel>::pointer sphereEdit(voxel::edit::sphere<t_voxel>::create(sphere(vector3(), 2.)));
-        voxel::edit::sphere<t_voxel>::pointer sphereEditCut(voxel::edit::sphere<t_voxel>::create(sphere(vector3(), 2.)));
+        t_editSphere::pointer sphereEdit(t_editSphere::create(sphere(vector3(), 2.)));
+        t_editSphere::pointer sphereEditCut(t_editSphere::create(sphere(vector3(), 2.)));
         sphereEditCut->setCut(true);
 
         voxelContainer->editVoxel(sphereEdit);
@@ -128,7 +149,7 @@ int main(int /*argc*/, char* /*argv*/[])
         voxelContainer->editVoxel(sphereEditCut, transform(vector3(35., 0., -16.), quaternion(), 6.));
 
         // axis aligned boxes
-        voxel::edit::axisAlignedBox<t_voxel>::pointer aabEdit(voxel::edit::axisAlignedBox<t_voxel>::create(blub::axisAlignedBox(vector3(-2.), vector3(2.))));
+        t_editAxisAlignedBox::pointer aabEdit(t_editAxisAlignedBox::create(blub::axisAlignedBox(vector3(-2.), vector3(2.))));
 
         voxelContainer->editVoxel(aabEdit, transform(vector3(0., 0., 15.)));
         voxelContainer->editVoxel(aabEdit, transform(vector3(10., 0., 15.), quaternion(), 2.));
@@ -162,7 +183,7 @@ int main(int /*argc*/, char* /*argv*/[])
 
 void createSphere(t_voxelContainer *container, const vector3 &position, const bool &cut)
 {
-    voxel::edit::sphere<t_voxel>::pointer sphereEdit(voxel::edit::sphere<t_voxel>::create(sphere(position, 5.)));
+    t_editSphere::pointer sphereEdit(t_editSphere::create(sphere(position, 5.)));
     sphereEdit->setCut(cut);
     container->editVoxel(sphereEdit);
 }

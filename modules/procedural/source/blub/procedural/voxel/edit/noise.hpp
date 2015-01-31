@@ -25,14 +25,16 @@ namespace edit
  * @brief The noise class generates a random terrain using simplex noise http://en.wikipedia.org/wiki/Simplex_noise .
  * Original code http://webstaff.itn.liu.se/~stegu/simplexnoise/SimplexNoise.java
  */
-template <class voxelType>
-class noise : public base<voxelType>
+template <class configType>
+class noise : public base<configType>
 {
 public:
     typedef boost::function<bool (vector3, real&)> t_callbackInterpolation;
 
-    typedef base<voxelType> t_base;
+    typedef configType t_config;
+    typedef base<t_config> t_base;
     typedef sharedPointer<noise> pointer;
+    typedef typename t_config::t_data t_voxel;
 
     /**
      * @brief creates an instance of the class and returns it as shared_ptr<>
@@ -96,7 +98,7 @@ protected:
      * @param resultVoxel gets set if interpolation larger -127
      * @return Returns true if interpolation larger -127
      */
-    bool calculateOneVoxel(const vector3& pos, voxelType* resultVoxel) const override
+    bool calculateOneVoxel(const vector3& pos, t_voxel* resultVoxel) const override
     {
         real x(pos.x*m_scale.x);
         real y(pos.y*m_scale.y);

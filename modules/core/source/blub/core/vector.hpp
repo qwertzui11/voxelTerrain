@@ -1,5 +1,5 @@
-#ifndef VECTOR_HPP
-#define VECTOR_HPP
+#ifndef BLUB_CORE_VECTOR_HPP
+#define BLUB_CORE_VECTOR_HPP
 
 #include "blub/core/globals.hpp"
 #include "blub/serialization/access.hpp"
@@ -30,7 +30,7 @@ namespace blub
             : t_base(size, value)
         {
         }
-#if !defined BOOST_NO_CXX11_HDR_INITIALIZER_LIST
+#if !defined BOOST_NO_CXX11_HDR_INITIALIZER_LIST || BOOST_CLANG == 1
         vector(const std::initializer_list<T> &list)
             : t_base(list)
         {
@@ -60,4 +60,4 @@ namespace blub
 }
 
 
-#endif // VECTOR_HPP
+#endif // BLUB_CORE_VECTOR_HPP

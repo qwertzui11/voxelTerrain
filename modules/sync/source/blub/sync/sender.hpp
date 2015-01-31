@@ -5,7 +5,7 @@
 #include "blub/core/signal.hpp"
 #include "blub/math/octree/container.hpp"
 #include "blub/math/octree/search.hpp"
-#include "blub/async/seperate.hpp"
+#include "blub/async/strand.hpp"
 
 #include "boost/function/function2.hpp"
 #include "boost/function/function3.hpp"
@@ -141,7 +141,7 @@ public:
             {
                 removeLinkSyncReceiverMaster(*accordingReceivers.cbegin(), toSync);
             }
-            m_syncReceivers.erase_return_void(it);
+            m_syncReceivers.erase(it);
         }
     }
 
@@ -206,11 +206,11 @@ public:
             {
                 removeLinkSyncReceiverMaster(receiver, *accordingSyncs.cbegin());
             }
-            m_receiverSyncs.erase_return_void(it);
+            m_receiverSyncs.erase(it);
         }
     }
 
-    blub::async::seperate &getMaster()
+    blub::async::strand &getMaster()
     {
         return m_master;
     }
@@ -336,14 +336,14 @@ protected:
             BASSERT(itSync != m_syncReceivers.cend());
             typename  t_receiverList::const_iterator itReceiver = itSync->second.find(receiver);
             BASSERT(itReceiver != itSync->second.cend());
-            itSync->second.erase_return_void(itReceiver);
+            itSync->second.erase(itReceiver);
         }
         {
             typename t_receiverToSyncsMap::iterator itReceiver = m_receiverSyncs.find(receiver);
             BASSERT(itReceiver != m_receiverSyncs.cend());
             typename t_syncList::const_iterator itSync = itReceiver->second.find(sync);
             BASSERT(itSync != itReceiver->second.cend());
-            itReceiver->second.erase_return_void(itSync);
+            itReceiver->second.erase(itSync);
         }
         removeSyncReceiver(receiver, sync);
     }
@@ -369,7 +369,7 @@ protected:
     }
 
 protected:
-    async::seperate m_master;
+    async::strand m_master;
 
     t_syncTree m_syncTree;
     t_syncToReceiversMap m_syncReceivers;

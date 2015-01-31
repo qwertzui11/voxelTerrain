@@ -1,77 +1,87 @@
+#ifndef BLUB_PROCEDURAL_PREDECL_HPP
+#define BLUB_PROCEDURAL_PREDECL_HPP
+
+
 namespace blub
 {
 namespace procedural
 {
     namespace voxel
     {
+        class config;
         class data;
+        class vertex;
         namespace tile
         {
-            template <class classType>
+            template <class tileType>
             class base;
-            template <class voxelType>
+            template <class configType = config>
             class container;
-            template <class voxelType>
+            template <class configType = config>
             class accessor;
-            template <class voxelType>
+            template <class configType = config>
             class renderer;
-            template <class voxelType>
+            template <class configType = config>
             class surface;
         }
         namespace simple
         {
-            template <class dataType>
+            template <class tileType>
             class base;
             namespace container
             {
                 namespace utils
                 {
-                    template <class voxelType>
+                    template <class configType = config>
                     class database;
                     enum class tileState;
-                    template <class voxelType>
+                    template <class tileType>
                     class tile;
                 }
-                template <class voxelType>
+                template <class configType = config>
                 class base;
-                template <class voxelType>
+                template <class configType = config>
                 class inMemory;
-                template <class voxelType>
+                template <class configType = config>
                 class database;
             }
-            template <class voxelType>
+            template <class voxelType = config>
             class accessor;
-            template <class voxelType>
+            template <class voxelType = config>
             class renderer;
-            template <class voxelType>
+            template <class voxelType = config>
             class surface;
         }
         namespace terrain
         {
-            template <class dataType>
+            template <class simpleType>
             class base;
-            template <class voxelType>
+            template <class configType = config>
             class accessor;
-            template <class voxelType>
+            template <class configType = config>
             class renderer;
-            template <class voxelType>
+            template <class configType = config>
             class surface;
         }
         namespace edit
         {
-            template <class voxelType>
+            template <class configType = config>
             class axisAlignedBox;
-            template <class voxelType>
+            template <class configType>
             class base;
-            template <class voxelType>
+            template <class configType = config>
             class box;
-            template <class voxelType>
+            template <class configType = config>
             class mesh;
-            template <class voxelType>
+            template <class configType = config>
             class noise;
-            template <class voxelType>
+            template <class configType = config>
             class sphere;
         }
     }
 }
 }
+
+
+#endif // BLUB_PROCEDURAL_PREDECL_HPP
+

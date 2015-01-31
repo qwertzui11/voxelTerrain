@@ -3,7 +3,7 @@ set(sources
 log/global.cpp
 dispatcher.cpp
 deadlineTimer.cpp
-seperate.cpp
+strand.cpp
 updater.cpp
 )
 
@@ -15,7 +15,7 @@ mutex.hpp
 mutexLocker.hpp
 mutexReadWrite.hpp
 predecl.hpp
-seperate.hpp
+strand.hpp
 updater.hpp
 )
 

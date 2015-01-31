@@ -34,11 +34,11 @@ enum class tileState
 /**
  * @brief The tile class contains a state and the data itself. For memory optimization no data gets saved if state is full or empty
  */
-template <class voxelType>
+template <class tileType>
 class tile
 {
 public:
-    typedef sharedPointer<voxel::tile::container<voxelType> > t_tilePtr;
+    typedef sharedPointer<tileType> t_tilePtr;
 
     tile()
         : state(tileState::empty)

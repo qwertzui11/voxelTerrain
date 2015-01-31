@@ -6,7 +6,7 @@
 
 #include <boost/functional/hash.hpp>
 #ifndef BLUB_NO_BULLET
-#   include <bullet/LinearMath/btVector3.h>
+#   include <LinearMath/btVector3.h>
 #endif
 #ifndef BLUB_NO_OGRE3D
 #   include <OGRE/OgreVector3.h>

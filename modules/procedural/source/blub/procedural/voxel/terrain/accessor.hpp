@@ -20,14 +20,15 @@ namespace terrain
  * @brief The accessor class contains a custom amount of level of details of type simple::accessor.
  *
  */
-template <class voxelType>
-class accessor : public base<sharedPointer<tile::accessor<voxelType> > >
+template <class configType>
+class accessor : public base<typename configType::t_accessor::t_simple>
 {
 public:
-    typedef base<sharedPointer<tile::accessor<voxelType> > > t_base;
+    typedef configType t_config;
+    typedef typename t_config::t_accessor::t_simple t_simple;
+    typedef base<t_simple> t_base;
 
-    typedef simple::accessor<voxelType> t_simple;
-    typedef simple::container::base<voxelType> t_simpleContainer;
+    typedef typename t_config::t_container::t_simple t_simpleContainer;
 
     /**
      * @brief accessor constructor
@@ -43,19 +44,15 @@ public:
         for (uint32 indLod = 0; indLod < numLod; ++indLod)
         {
             t_simple* lod = new t_simple(worker, voxels, indLod);
-            t_base::m_lods.push_back(lod);
+            t_base::m_lods.emplace_back(lod);
         }
     }
 
     /**
      * @brief ~accessor destructor
      */
-    virtual ~accessor()
+    ~accessor()
     {
-        for (auto lod : t_base::m_lods)
-        {
-            delete lod;
-        }
     }
 
     /**

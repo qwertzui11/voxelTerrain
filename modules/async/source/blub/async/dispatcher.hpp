@@ -26,12 +26,12 @@ namespace async
 {
 
 
-class dispatcher : public noncopyable
+class dispatcher : public noncopyable // TODO free me from threads!
 {
 public:
     typedef std::function<void ()> t_toCallFunction;
 
-    dispatcher(const uint16& numThreads, const bool& endThreadsAfterAllDone, const string& threadName = "");
+    dispatcher(const uint16& numThreads = 0, const bool& endThreadsAfterAllDone = true, const string& threadName = "");
     virtual ~dispatcher();
 
     void join();
@@ -53,13 +53,6 @@ public:
     boost::asio::io_service* _getIoService(void);
 
 protected:
-    friend class deadlineTimer;
-    // network
-    friend class network::ip::tcp::acceptor;
-    friend class network::ip::tcp::connector;
-    friend class network::ip::udp::socket;
-    friend class network::connection;
-
     void nameThread(const int32 &indThread);
 
 private:

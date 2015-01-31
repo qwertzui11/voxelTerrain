@@ -1,12 +1,20 @@
 
 set(sources
 log/global.cpp
+cube.cpp
+circle.cpp
+plane.cpp
+sphere.cpp
 )
 
 set(headers
 predecl.hpp
 log/global.hpp
+circle.hpp
+sphere.hpp
+voxel/config.hpp
 voxel/data.hpp
+voxel/vertex.hpp
 voxel/edit/axisAlignedBox.hpp
 voxel/edit/base.hpp
 voxel/edit/box.hpp
@@ -19,6 +27,7 @@ voxel/terrain/surface.hpp
 voxel/terrain/renderer.hpp
 voxel/simple/base.hpp
 voxel/simple/container/base.hpp
+voxel/simple/container/database.hpp
 voxel/simple/container/inMemory.hpp
 voxel/simple/container/utils/tile.hpp
 voxel/simple/accessor.hpp
@@ -30,6 +39,8 @@ voxel/tile/base.hpp
 voxel/tile/surface.hpp
 voxel/tile/container.hpp
 voxel/tile/renderer.hpp
+cube.hpp
+plane.hpp
 )
 
 add_module(procedural)

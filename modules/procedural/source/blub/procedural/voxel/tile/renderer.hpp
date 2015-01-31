@@ -19,18 +19,20 @@ namespace tile
  * @brief The renderer class contains information if a tile::surface should get rendered and how it should get rendered.
  * Class must get derived by your render-engine. In the derived class convert the vertices/indices to your hardware/software render engine. (Most likely to a hardwarebuffer)
  */
-template <class voxelType>
-class renderer : public base<renderer<voxelType> >
+template <class configType>
+class renderer : public base<renderer<configType> >
 {
 public:
-    typedef base<renderer<voxelType> > t_base;
-    typedef blub::procedural::voxel::tile::surface<voxelType> t_tileData;
+    typedef configType t_config;
+    typedef base<renderer<t_config> > t_base;
+    typedef typename t_config::t_renderer::t_tile* t_thiz;
+    typedef typename t_config::t_surface::t_tile t_tileData;
     typedef blub::sharedPointer<t_tileData> t_tileDataPtr;
 
     /**
      * @brief ~renderer destructor
      */
-    virtual ~renderer()
+    ~renderer()
     {
         ;
     }
@@ -40,7 +42,7 @@ public:
      * @param convertToRenderAble Contains vertices and indices.
      * @param aabb The axisAlignedBox that describes the bound of the vertices.
      */
-    virtual void setTileData(t_tileDataPtr convertToRenderAble, const axisAlignedBox &aabb) = 0;
+    void setTileData(t_tileDataPtr convertToRenderAble, const axisAlignedBox &aabb) {;}
 
     /**
      * @brief setVisible sets if a tile should get rendered. All lod-submeshes must not be rendered either.

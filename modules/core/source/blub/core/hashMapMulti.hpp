@@ -11,13 +11,14 @@ namespace blub
 
 template <class S,
     class T,
-    class H = boost::hash<S>,
-    class P = std::equal_to<S>,
-    class A = std::allocator<pair<const S, T> > >
-class hashMapMulti : public boost::unordered::unordered_multimap<S, T>
+    class H,// = boost::hash<S>,
+    class P,// = std::equal_to<S>,
+    class A// = std::allocator<pair<const S, T> >
+          >
+class hashMapMulti : public boost::unordered::unordered_multimap<S, T, H, P, A>
 {
 public:
-    typedef boost::unordered::unordered_multimap<S, T> t_base;
+    typedef boost::unordered::unordered_multimap<S, T, H, P, A> t_base;
     typedef std::pair<typename t_base::iterator, typename t_base::iterator> equal_range_result;
     typedef std::pair<typename t_base::const_iterator, typename t_base::const_iterator> equal_range_result_const;
 

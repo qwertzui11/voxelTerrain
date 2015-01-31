@@ -61,7 +61,7 @@ void updater::run(const real& frames, const bool& threaded)
 
     if (m_frames != 0.)
     {
-        m_frameDeadline = new deadlineTimer(this);
+        m_frameDeadline = new deadlineTimer(*this);
     }
 
     m_start = boost::chrono::system_clock::now();
