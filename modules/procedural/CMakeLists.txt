@@ -1,17 +1,11 @@
 
 set(sources
 log/global.cpp
-cube.cpp
-circle.cpp
-plane.cpp
-sphere.cpp
 )
 
 set(headers
 predecl.hpp
 log/global.hpp
-circle.hpp
-sphere.hpp
 voxel/config.hpp
 voxel/data.hpp
 voxel/vertex.hpp
@@ -39,8 +33,6 @@ voxel/tile/base.hpp
 voxel/tile/surface.hpp
 voxel/tile/container.hpp
 voxel/tile/renderer.hpp
-cube.hpp
-plane.hpp
 )
 
 add_module(procedural)
