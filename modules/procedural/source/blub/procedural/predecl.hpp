@@ -10,7 +10,7 @@ namespace procedural
     {
         class config;
         class data;
-        class vertex;
+        struct vertex;
         namespace tile
         {
             template <class tileType>

@@ -151,7 +151,7 @@ public:
         return true;
     }
 protected:
-    customEdit(const sphere& desc)
+    customEdit(const ::blub::sphere& desc)
         : t_base(desc)
     {
         const uint32 colourToRand = math::rand()%3;
@@ -220,7 +220,7 @@ typedef voxel::terrain::renderer<t_config> t_voxelRenderer;
 typedef voxel::terrain::surface<t_config> t_voxelSurface;
 typedef voxel::edit::axisAlignedBox<t_config> t_editAxisAlignedBox;
 typedef voxel::edit::sphere<t_config> t_editSphere;
-typedef typename t_config::t_renderer::t_tile t_renderTile;
+typedef t_config::t_renderer::t_tile t_renderTile;
 
 
 void createSphere(t_voxelContainer *container, const vector3 &position, const bool &cut);
