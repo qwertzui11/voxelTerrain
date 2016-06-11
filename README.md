@@ -1,5 +1,5 @@
 # VoxelTerrain
-All information about this library are available at [voxelTerrain.com](http://voxelterrain.com)
+All information about this library is available at [voxelTerrain.com](http://voxelterrain.com)
 
 ## Some images
 ![Primitives](/docs/img/voxel_primitive.png)
