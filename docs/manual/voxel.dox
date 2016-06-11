@@ -1,7 +1,7 @@
 /** @mainpage voxelTerrain
 @tableofcontents
 @section intro Introduction
-@version 1.2
+@version 1.3
 @author <a href="http://markus-lanner.com">Markus Lanner</a>
 @subsection source Source
 The full source is available at <a href="https://github.com/qwertzui11/voxelTerrain">github</a>.
@@ -53,8 +53,9 @@ If you are new to this library, start here.
 Use <a href="http://cmake.org">cmake</a> to compile the library.
 
 @subsection compiler Tested compilers
-- gcc/mingw 4.8
-- clang 3.4
+- gcc 4.8 4.9
+- mingw 4.8
+- clang 3.4 3.5
 - Visual Studio 2012 (msvc11)
 
 The library uses several C++11 features like nullptr, strongly typed enumerations, lambda and more.

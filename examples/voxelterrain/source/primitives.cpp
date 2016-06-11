@@ -128,7 +128,7 @@ int main(int /*argc*/, char* /*argv*/[])
 
         // add/cut sphere when mouse-button gets pressed
         handler.signalMouseGotPressed()->connect(
-                    [&] (bool &left)
+                    [&] (bool left)
                     {
                         createSphere(voxelContainer.get(), handler.camera->getPosition()+handler.camera->getDirection()*10., !left);
                     }

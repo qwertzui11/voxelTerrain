@@ -19,6 +19,7 @@
 #include <OGRE/OgreMesh.h>
 #include <OGRE/OgreMeshManager.h>
 #include <OGRE/OgreSceneManager.h>
+#include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSubEntity.h>
 #include <OGRE/OgreSubMesh.h>
 

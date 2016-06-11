@@ -14,8 +14,6 @@ identifier.hpp
 
 if (BLUB_BUILD_PROCEDURAL)
   set(sources ${sources}
-  voxel/container/multipleTiles/network_sync_voxel_container_multipleTiles_receiver.cpp
-  voxel/container/multipleTiles/network_sync_voxel_container_multipleTiles_sender.cpp
   )
   set(headers ${headers}
   voxel/accessor/multipleTiles/receiver.hpp
@@ -24,10 +22,8 @@ if (BLUB_BUILD_PROCEDURAL)
   voxel/accessor/terrain/receiver.hpp
   voxel/accessor/terrain/sender.hpp
   voxel/container/multipleTiles/receiver.hpp
-  voxel/container/multipleTiles/network_sync_voxel_container_multipleTiles_receiver.hpp
   voxel/container/multipleTiles/base.hpp
   voxel/container/multipleTiles/sender.hpp
-  voxel/container/multipleTiles/network_sync_voxel_container_multipleTiles_sender.hpp
   )
 endif (BLUB_BUILD_PROCEDURAL)
 

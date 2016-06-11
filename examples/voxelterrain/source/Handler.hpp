@@ -8,8 +8,10 @@
 
 #include <OGRE/OgreCamera.h>
 #include <OGRE/OgreFrameListener.h>
+#include <OGRE/OgreLogManager.h>
 #include <OGRE/OgreRenderWindow.h>
 #include <OGRE/OgreRoot.h>
+#include <OGRE/OgreViewport.h>
 
 #include <OIS/OISInputManager.h>
 #include <OIS/OISKeyboard.h>
