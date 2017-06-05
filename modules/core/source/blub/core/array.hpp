@@ -29,8 +29,8 @@ private:
     {
         (void)version;
 
-        boost::serialization::array<T> toSerialize(t_base::data(), t_base::size());
-        readWrite & serialization::nameValuePair::create("elems", toSerialize);
+        t_base& casted = *this;
+        readWrite & serialization::nameValuePair::create("elems", casted);
     }
 
 };
